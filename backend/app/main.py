@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -9,6 +10,27 @@ from app.routers import (
     admin, options, inventory, 
     dashboard, upload  # ★ upload をインポートに追加
 )
+
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+# app/main.py から見たルート（backend/）直下の .env を明示的に指定
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+
+# デバッグ用：読み込めているキーの確認（ターミナルに出力されます）
+if SUPABASE_KEY:
+    print(f"✅ 読めてるよLoaded SUPABASE_SERVICE_KEY: {SUPABASE_KEY[:10]}...")
+else:
+    print("❌ 違う！！SUPABASE_SERVICE_KEY is NOT set!")
+
+# Supabaseクライアントの初期化
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 Base.metadata.create_all(bind=engine)
 
@@ -48,3 +70,25 @@ app.include_router(upload.router, prefix="/api/v1")  # ★ 画像アップロー
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Ramen Backend Service is Running"}
+
+# --- /users エンドポイント ---
+@app.get("/users")
+def get_users():
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client is not initialized. Check your .env file.")
+    try:
+        response = supabase.table("users").select("*").execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/users")
+def create_user(name: str, email: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client is not initialized. Check your .env file.")
+    try:
+        response = supabase.table("users").insert({"name": name, "email": email}).execute()
+        return response.data
+    except Exception as e:
+        # Supabase側で発生したエラー（テーブルやカラムが存在しない等）をレスポンスで返す
+        raise HTTPException(status_code=500, detail=str(e))
