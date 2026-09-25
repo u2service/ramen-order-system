@@ -1,8 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-docker-compose
 {
-	// "name": "Existing Docker Compose (Extend)",
-	"name": "My Dev Container",
+	"name": "Existing Docker Compose (Extend)",
 
 	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
 	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
@@ -10,6 +9,7 @@
 		"../docker-compose.yml",
 		"docker-compose.yml"
 	],
+
 
 	// The 'service' property is the name of the service for the container that VS Code should
 	// use. Update this value and .devcontainer/docker-compose.yml to the real service name.
@@ -22,7 +22,6 @@
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
-	// 以下を追記
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {}
 	}

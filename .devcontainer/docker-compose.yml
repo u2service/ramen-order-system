@@ -22,5 +22,5 @@ services:
     #   - seccomp:unconfined
 
     # Overrides default command so things don't shut down after the process ends.
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: sleep infinity
  
