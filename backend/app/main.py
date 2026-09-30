@@ -8,7 +8,7 @@ from app.database import engine, Base
 from app.routers import (
     menu, orders, kds, pos, 
     admin, options, inventory, 
-    dashboard, upload  # ★ upload をインポートに追加
+    dashboard, upload
 )
 
 from dotenv import load_dotenv
@@ -27,12 +27,10 @@ if SUPABASE_KEY:
 else:
     print("❌ 違う！！SUPABASE_SERVICE_KEY is NOT set!")
 
-# Supabaseクライアントの初期化
+# Supabase SDKクライアントの初期化（※Storageや認証を直接操作する場合用）
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ラーメン店注文・在庫管理API")
 
@@ -57,6 +55,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# 各ルーターの読み込み (SQLAlchemy経由でSupabaseにアクセス)
 app.include_router(menu.router, prefix="/api/v1")
 app.include_router(orders.router, prefix="/api/v1")
 app.include_router(kds.router, prefix="/api/v1")
@@ -71,24 +70,15 @@ app.include_router(upload.router, prefix="/api/v1")  # ★ 画像アップロー
 def read_root():
     return {"status": "ok", "message": "Ramen Backend Service is Running"}
 
-# --- /users エンドポイント ---
-@app.get("/users")
-def get_users():
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client is not initialized. Check your .env file.")
-    try:
-        response = supabase.table("users").select("*").execute()
-        return response.data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# --- テスト用エンドポイント（必要に応じて利用） ---
+# @app.get("/users")
+# def get_users():
+#     if not supabase:
 
-@app.post("/users")
-def create_user(name: str, email: str):
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client is not initialized. Check your .env file.")
-    try:
-        response = supabase.table("users").insert({"name": name, "email": email}).execute()
-        return response.data
-    except Exception as e:
-        # Supabase側で発生したエラー（テーブルやカラムが存在しない等）をレスポンスで返す
-        raise HTTPException(status_code=500, detail=str(e))
+#         raise HTTPException(status_code=500, detail="Supabase client is not initialized.")
+#     try:
+
+#         response = supabase.table("categories").select("*").execute()
+#         return response.data
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
