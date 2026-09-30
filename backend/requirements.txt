@@ -8,3 +8,4 @@ alembic>=1.19.1
 python-multipart
 pytest
 pytest-asyncio
+supabase
