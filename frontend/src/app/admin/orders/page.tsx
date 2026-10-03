@@ -5,6 +5,8 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; // react-calendar の基本スタイル
 import { Order, OrderStatus, ItemStatus } from '@/types';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 // ステータス表示用ラベルとスタイル定義
 const ORDER_STATUS_LABELS: Record<OrderStatus, { label: string; style: string }> = {
   pending: { label: '受付済', style: 'bg-yellow-100 text-yellow-800' },
@@ -45,7 +47,7 @@ export default function OrderHistoryPage() {
   const fetchAllOrderDates = useCallback(async () => {
     try {
       // 全注文を取得して日付を収集 (バックエンドに専用エンドポイントがある場合はそちらを呼び出します)
-      const response = await fetch('http://localhost:8000/api/v1/kds/orders');
+      const response = await fetch(`${API_BASE_URL}/kds/orders`);
       if (response.ok) {
         const allOrders: Order[] = await response.json();
         // 注文データの created_at から YYYY-MM-DD を抽出して重複を除去
@@ -77,7 +79,7 @@ export default function OrderHistoryPage() {
 
       try {
         const response = await fetch(
-          `http://localhost:8000/api/v1/kds/orders?date=${dateStr}`
+          `${API_BASE_URL}/kds/orders?date=${dateStr}`
         );
         if (!response.ok) {
           throw new Error('注文履歴の取得に失敗しました');
