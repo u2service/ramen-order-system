@@ -76,7 +76,7 @@ export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_BASE_URL}/api/v1/upload`, {
+  const res = await fetch(`${API_BASE_URL}/upload`, {
     method: "POST",
     // ※ FormData を送信する場合、'Content-Type' ヘッダーは指定しないでください。
     // ブラウザが自動的に boundary を含む適切な Content-Type を設定してくれます。
