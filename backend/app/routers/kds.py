@@ -86,7 +86,7 @@ def get_kds_orders(
         created_at_val = ""
         if getattr(order, "created_at", None):
             try:
-                created_at_val = order.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                created_at_val = order.created_at.isoformat()
             except AttributeError:
                 created_at_val = str(order.created_at)
 
