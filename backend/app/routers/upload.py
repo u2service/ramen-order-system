@@ -14,7 +14,7 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 # Supabase クライアントの初期化
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-SUPABASE_BUCKET = "product-images"  # ← 作成したバケット名
+SUPABASE_BUCKET = "ROS_images"  # ← 作成したバケット名
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
