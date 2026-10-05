@@ -57,8 +57,8 @@ export default function KDSStreamPage() {
 
       // ★ 古い注文が上、新しい注文が下（一番下に追加）になるよう昇順ソート
       flatItems.sort((a, b) => {
-        const timeA = new Date(a.created_at.replace(/-/g, "/")).getTime();
-        const timeB = new Date(b.created_at.replace(/-/g, "/")).getTime();
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
         if (timeA !== timeB) {
           return timeA - timeB; // 時間の昇順
         }
@@ -108,16 +108,10 @@ export default function KDSStreamPage() {
   // 経過時間（分）の計算関数
   const getElapsedMinutes = (createdAtStr: string) => {
     if (!createdAtStr) return 0;
-    // 日付文字列のハイフンをスラッシュに置換してミリ秒を算出
-    const formattedStr = createdAtStr.replace(/-/g, "/");
-    const created = new Date(formattedStr).getTime();
+    const created = new Date(createdAtStr).getTime();
     const now = new Date().getTime();
 
-    // UTC誤判定による+9時間（540分）のズレが生じている場合の補正
-    let diffMinutes = Math.floor((now - created) / (1000 * 60));
-    if (diffMinutes >= 530) {
-      diffMinutes -= 540; // 9時間分を引き戻す
-    }
+    const diffMinutes = Math.floor((now - created) / (1000 * 60));
 
     return Math.max(0, diffMinutes);
   };
