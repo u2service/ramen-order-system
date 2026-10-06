@@ -14,13 +14,13 @@ export const fetchCategories = async (): Promise<Category[]> => {
   return response.data;
 };
 
-// カテゴリ新規作成 (JSON送信)
+// カテゴリ新規作成
 export const createCategory = async (data: { name: string; sort_order: number; image_url?: string | null }): Promise<Category> => {
   const response = await api.post('/admin/categories', data);
   return response.data;
 };
 
-// カテゴリ更新 (JSON送信)
+// カテゴリ更新
 export const updateCategory = async (id: number, data: { name: string; sort_order: number; image_url?: string | null }): Promise<Category> => {
   const response = await api.put(`/admin/categories/${id}`, data);
   return response.data;

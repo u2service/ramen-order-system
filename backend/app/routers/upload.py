@@ -53,9 +53,18 @@ async def upload_image(file: UploadFile = File(...)):
     # 3. ユニークなファイル名を生成
     filename = f"{uuid.uuid4().hex}{ext}"
 
+    # ★ ログ出力: Supabaseに保存するファイル名
+    print(f"【Supabase保存ファイル名】: {filename}")
+
     # 4. ファイルを読み込んでSupabase Storageにアップロード
     try:
         contents = await file.read()
+
+        # ★ ログ出力: 読み出したデータ（サイズと先頭の一部バイナリ）
+        # ※ contents 全体を出すとバイナリデータで画面が埋まるため、データサイズを表示するのが一般的です
+        print(f"【読み出したデータサイズ】: {len(contents)} bytes")
+        print(f"【データ先頭50バイト】: {contents[:50]}")
+
         supabase.storage.from_(SUPABASE_BUCKET).upload(
             path=filename,
             file=contents,
@@ -69,6 +78,9 @@ async def upload_image(file: UploadFile = File(...)):
 
     # 5. 公開URLを取得して返却
     public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(filename)
+
+    # ★ ログ出力: 最終的な画像の公開URL（Supabase上のURL）
+    print(f"【返却する画像URL(public_url)】: {public_url}")
 
     return {
         "url": public_url,
