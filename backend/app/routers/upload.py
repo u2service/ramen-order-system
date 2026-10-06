@@ -5,20 +5,25 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from pathlib import Path
 
-# .env の読み込み
+# .env の読み込み（ローカル用：override=False でシステム環境変数を優先）
 env_path = Path(__file__).resolve().parent.parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 # Supabase クライアントの初期化
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+# SUPABASE_SERVICE_KEY が取れなければ SUPABASE_KEY も見にいく（フォールバック）
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
 SUPABASE_BUCKET = "ROS_images"  # ← 作成したバケット名
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"【ERROR】Supabaseクライアント作成失敗: {e}")
 
 # 許可する拡張子とMIMEタイプ
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -30,9 +35,14 @@ async def upload_image(file: UploadFile = File(...)):
     画像ファイルをSupabase Storageにアップロードし、公開URLを返します。
     """
     if not supabase:
+        # ★ エラーメッセージを詳細化して何が足りないか判別できるようにする
+        missing = []
+        if not SUPABASE_URL: missing.append("SUPABASE_URL")
+        if not SUPABASE_KEY: missing.append("SUPABASE_SERVICE_KEY / SUPABASE_KEY")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Supabase クライアントが初期化されていません。環境変数を確認してください。"
+            detail=f"Supabase 初期化失敗。不足している値: {', '.join(missing)}"
         )
 
     # 1. コンテンツタイプの検証
