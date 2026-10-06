@@ -59,12 +59,26 @@ export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
+  const endpoint = '/upload';
+
+  // ★ 1. 送信先のフルURLを組み立ててログ出力
+  // axiosのbaseURLとエンドポイントを結合した完全なURLを取得します
+  const fullUrl = axios.getUri({
+    baseURL: api.defaults.baseURL,
+    url: endpoint,
+  });
+  console.log("【画像アップロード送信先URL】:", fullUrl);
+
   // FormData 送信時は axios が自動で適切な Content-Type (multipart/form-data) を設定します
   const response = await api.post('/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
+
+  // ★ 2. レスポンス全体と返ってきた画像URLをログ出力
+  console.log("【レスポンスデータ】:", response.data);
+  console.log("【取得した画像URL】:", response.data.url);
 
   return response.data.url; // 返ってきた画像URL ("/.../static/uploads/xxx.png")
 }
