@@ -21,12 +21,6 @@ load_dotenv(dotenv_path=env_path)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
-# デバッグ用：読み込めているキーの確認（ターミナルに出力されます）
-if SUPABASE_KEY:
-    print(f"✅ Loaded SUPABASE_SERVICE_KEY: {SUPABASE_KEY[:10]}...")
-else:
-    print("❌ SUPABASE_SERVICE_KEY is NOT set!")
-
 # Supabase SDKクライアントの初期化（※Storageや認証を直接操作する場合用）
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
