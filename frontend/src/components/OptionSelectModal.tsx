@@ -14,7 +14,7 @@ export type Option = {
 export type OptionGroup = {
   id: number;
   name: string;
-  is_required: boolean;
+  hissu_flag: boolean;
   multi_flag: boolean;
   options: Option[];
 };

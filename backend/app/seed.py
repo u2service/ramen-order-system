@@ -23,8 +23,8 @@ db.add_all([cat_ramen, cat_side])
 db.commit()
 
 # 2. オプショングループ作成
-grp_topping = OptionGroup(name="トッピング", is_required=False, multi_flag=True)
-grp_noodle = OptionGroup(name="麺のかたさ", is_required=True, multi_flag=False)
+grp_topping = OptionGroup(name="トッピング", hissu_flag=False, multi_flag=True)
+grp_noodle = OptionGroup(name="麺のかたさ", hissu_flag=True, multi_flag=False)
 db.add_all([grp_topping, grp_noodle])
 db.commit()
 

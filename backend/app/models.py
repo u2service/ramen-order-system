@@ -19,7 +19,7 @@ class OptionGroup(Base):
     __tablename__ = "option_groups"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    is_required = Column(Boolean, nullable=False, default=False)
+    hissu_flag = Column(Boolean, nullable=False, default=False)
     multi_flag = Column(Boolean, nullable=False, default=False)
 
     options = relationship("Option", back_populates="option_group")

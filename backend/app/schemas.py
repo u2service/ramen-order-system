@@ -33,7 +33,7 @@ class OptionResponseSchema(OptionCreateSchema):
 class OptionGroupSchema(BaseModel):
     id: int
     name: str
-    is_required: bool
+    hissu_flag: bool
     multi_flag: bool
     options: List[OptionSchema] = []
 
@@ -41,7 +41,7 @@ class OptionGroupSchema(BaseModel):
 
 class OptionGroupCreateSchema(BaseModel):
     name: str
-    is_required: bool = False
+    hissu_flag: bool = False
     multi_flag: bool = False
 
 class OptionGroupResponseSchema(OptionGroupCreateSchema):

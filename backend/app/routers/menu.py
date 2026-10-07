@@ -15,6 +15,9 @@ def get_menu(db: Session = Depends(get_db)):
     - urikire_flag = True の商品は売り切れ表示としてフラグを含めて返却[cite: 2]
     - ソート順: ① 販売中が優先 ➔ ② sort_order 順[cite: 5]
     """
+
+    print("ここまで来た")
+    
     categories = (
         db.query(Category)
         .order_by(Category.sort_order.asc(), Category.id.asc())
@@ -47,7 +50,7 @@ def get_menu(db: Session = Depends(get_db)):
                 formatted_option_groups.append({
                     "id": group.id,
                     "name": group.name,
-                    "is_required": group.is_required,
+                    "hissu_flag": group.hissu_flag,
                     "multi_flag": group.multi_flag,
                     "options": active_options
                 })

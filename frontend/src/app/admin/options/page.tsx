@@ -17,7 +17,7 @@ interface Option {
 interface OptionGroup {
   id: number;
   name: string;
-  is_required: boolean;
+  hissu_flag: boolean;
   multi_flag: boolean;
   options: Option[];
 }
@@ -44,7 +44,7 @@ export default function OptionManagementPage() {
   // グループ作成・編集フォーム
   const [groupForm, setGroupForm] = useState({
     name: '',
-    is_required: false,
+    hissu_flag: false,
     multi_flag: false,
   });
 
@@ -95,7 +95,7 @@ export default function OptionManagementPage() {
   // --- グループ用モーダル制御 ---
   const openCreateGroupModal = () => {
     setEditingGroupId(null);
-    setGroupForm({ name: '', is_required: false, multi_flag: false });
+    setGroupForm({ name: '', hissu_flag: false, multi_flag: false });
     setIsGroupModalOpen(true);
   };
 
@@ -103,7 +103,7 @@ export default function OptionManagementPage() {
     setEditingGroupId(group.id);
     setGroupForm({
       name: group.name,
-      is_required: group.is_required,
+      hissu_flag: group.hissu_flag,
       multi_flag: group.multi_flag,
     });
     setIsGroupModalOpen(true);
@@ -128,7 +128,7 @@ export default function OptionManagementPage() {
       if (res.ok) {
         setIsGroupModalOpen(false);
         setEditingGroupId(null);
-        setGroupForm({ name: '', is_required: false, multi_flag: false });
+        setGroupForm({ name: '', hissu_flag: false, multi_flag: false });
         fetchGroups();
       } else {
         console.error('Save failed:', await res.json());
@@ -263,7 +263,7 @@ export default function OptionManagementPage() {
                     <div>
                       <div className="font-bold text-gray-800">• {group.name}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        ({group.is_required ? '必須' : '任意'} / {group.multi_flag ? '複数選択' : '単一'})
+                        ({group.hissu_flag ? '必須' : '任意'} / {group.multi_flag ? '複数選択' : '単一'})
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -454,10 +454,10 @@ export default function OptionManagementPage() {
               <label className="flex items-center gap-2 text-sm cursor-pointer mt-2">
                 <input
                   type="checkbox"
-                  checked={groupForm.is_required}
-                  onChange={(e) => setGroupForm({ ...groupForm, is_required: e.target.checked })}
+                  checked={groupForm.hissu_flag}
+                  onChange={(e) => setGroupForm({ ...groupForm, hissu_flag: e.target.checked })}
                 />
-                注文時に選択を必須とする (`is_required`)
+                注文時に選択を必須とする (`hissu_flag`)
               </label>
             </div>
 
