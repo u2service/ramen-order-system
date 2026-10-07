@@ -66,8 +66,8 @@ def seed_master_data(db_session):
     db_session.flush()
 
     # 3. オプショングループ & オプション
-    grp_topping = OptionGroup(name="トッピング", hissu_flag=False, multi_flag=True)
-    grp_set = OptionGroup(name="セットメニュー", hissu_flag=False, multi_flag=False)
+    grp_topping = OptionGroup(name="トッピング", is_required=False, multi_flag=True)
+    grp_set = OptionGroup(name="セットメニュー", is_required=False, multi_flag=False)
     db_session.add_all([grp_topping, grp_set])
     db_session.flush()
 
