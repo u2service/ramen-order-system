@@ -23,9 +23,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 # デバッグ用：読み込めているキーの確認（ターミナルに出力されます）
 if SUPABASE_KEY:
-    print(f"✅ 読めてるよLoaded SUPABASE_SERVICE_KEY: {SUPABASE_KEY[:10]}...")
+    print(f"✅ Loaded SUPABASE_SERVICE_KEY: {SUPABASE_KEY[:10]}...")
 else:
-    print("❌ 違う！！SUPABASE_SERVICE_KEY is NOT set!")
+    print("❌ SUPABASE_SERVICE_KEY is NOT set!")
 
 # Supabase SDKクライアントの初期化（※Storageや認証を直接操作する場合用）
 supabase: Client = None
