@@ -30,8 +30,8 @@ export default function RecipeSettingPage() {
       try {
         setLoading(true);
         const [prodRes, optRes, itemRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/admin/products`).catch(() => null), // または /products
-          fetch(`${API_BASE_URL}/options`).catch(() => null),
+          fetch(`${API_BASE_URL}/admin/products`).catch(() => null),
+          fetch(`${API_BASE_URL}/admin/option-groups`).catch(() => null),
           fetch(`${API_BASE_URL}/inventory/items`).catch(() => null),
         ]);
 
@@ -46,8 +46,10 @@ export default function RecipeSettingPage() {
         }
 
         if (optRes && optRes.ok) {
-          const opts = await optRes.json();
-          setOptions(opts);
+          const groups = await optRes.json();
+          // 各グループの中に入っている選択肢（options）をフラットな1つの配列に展開
+          const allOptions: Option[] = groups.flatMap((group: any) => group.options || []);
+          setOptions(allOptions);
         }
 
         if (itemRes && itemRes.ok) {
