@@ -41,7 +41,6 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         for order in paid_orders
         for item in order.items
     )
-    print(f"本日の原価合計 today_cost={today_cost}")
 
     # 本日の粗利合計 = 売上合計 - 原価合計
     today_gross_profit = today_sales - today_cost
