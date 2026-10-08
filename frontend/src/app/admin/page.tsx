@@ -10,6 +10,8 @@ type DashboardSummary = {
   stock_alerts: number;
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
 export default function AdminDashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary>({
     today_sales: 0,
@@ -23,7 +25,7 @@ export default function AdminDashboardPage() {
     const fetchDashboardSummary = async () => {
       try {
         // FastAPIのエンドポイントを呼び出し
-        const res = await fetch("http://localhost:8000/api/v1/dashboard/summary");
+        const res = await fetch(`${API_BASE_URL}/dashboard/summary`);
         if (res.ok) {
           const data = await res.json();
           setSummary(data);
