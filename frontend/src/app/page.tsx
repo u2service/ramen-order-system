@@ -47,7 +47,7 @@ export default function OrderPage() {
             const optionGroups: OptionGroup[] = (prod.option_groups || []).map((grp: any) => ({
               id: grp.id,
               name: grp.name,
-              hissu_flag: grp.hissu_flag ?? false,
+              is_required: grp.is_required ?? false,
               multi_flag: grp.multi_flag ?? false,
               options: (grp.options || []).map((opt: any) => ({
                 id: opt.id,
@@ -138,7 +138,7 @@ export default function OrderPage() {
 
     // 必須チェック
     for (const group of selectedItem.option_groups) {
-      if (group.hissu_flag) {
+      if (group.is_required) {
         const hasSelectedInGroup = selectedOptions.some(
           (opt) => opt.option_group_id === group.id
         );

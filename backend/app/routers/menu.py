@@ -50,7 +50,7 @@ def get_menu(db: Session = Depends(get_db)):
                 formatted_option_groups.append({
                     "id": group.id,
                     "name": group.name,
-                    "hissu_flag": group.hissu_flag,
+                    "is_required": group.is_required,
                     "multi_flag": group.multi_flag,
                     "options": active_options
                 })
