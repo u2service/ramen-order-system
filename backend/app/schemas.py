@@ -203,7 +203,7 @@ class StripeCheckoutResponseSchema(BaseModel):
 class InventoryItemBaseSchema(BaseModel):
     name: str
     unit: str
-    zaiko_alert: float
+    alert_threshold: float
 
 class InventoryItemCreateSchema(InventoryItemBaseSchema):
     pass
@@ -254,7 +254,7 @@ class InventoryAlertSchema(BaseModel):
     inventory_item_id: int
     item_name: str
     current_quantity: float
-    zaiko_alert: float
+    alert_threshold: float
     unit: str
     status: str  # "LOW_STOCK" や "EXPIRING_SOON"
 

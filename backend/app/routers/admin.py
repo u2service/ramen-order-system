@@ -113,12 +113,12 @@ def get_inventory_alerts(db: Session = Depends(get_db)):
         ).scalar() or Decimal("0.00")
 
         # 1. 発注アラート（安全在庫割れ）[cite: 1]
-        if total_current_qty <= item.zaiko_alert:
+        if total_current_qty <= item.alert_threshold:
             alerts.append(InventoryAlertSchema(
                 inventory_item_id=item.id,
                 item_name=item.name,
                 current_quantity=total_current_qty,
-                zaiko_alert=item.zaiko_alert,
+                alert_threshold=item.alert_threshold,
                 unit=item.unit,
                 status="LOW_STOCK"
             ))
@@ -136,7 +136,7 @@ def get_inventory_alerts(db: Session = Depends(get_db)):
                 inventory_item_id=item.id,
                 item_name=item.name,
                 current_quantity=total_current_qty,
-                zaiko_alert=item.zaiko_alert,
+                alert_threshold=item.alert_threshold,
                 unit=item.unit,
                 status="EXPIRING_SOON"
             ))

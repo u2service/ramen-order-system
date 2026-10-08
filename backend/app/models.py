@@ -69,7 +69,7 @@ class InventoryItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     unit = Column(String(20), nullable=False)
-    zaiko_alert = Column(Numeric(10, 2), nullable=False, default=0)
+    alert_threshold = Column(Numeric(10, 2), nullable=False, default=0)
 
     lots = relationship("InventoryLot", back_populates="inventory_item")
 

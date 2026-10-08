@@ -37,7 +37,7 @@ def get_inventory_items(db: Session = Depends(get_db)):
             id=item.id,
             name=item.name,
             unit=item.unit,
-            zaiko_alert=float(item.zaiko_alert),
+            alert_threshold=float(item.alert_threshold),
             current_stock=float(stock_sum)
         ))
     return result
@@ -47,7 +47,7 @@ def create_inventory_item(item_in: InventoryItemCreateSchema, db: Session = Depe
     db_item = models.InventoryItem(
         name=item_in.name,
         unit=item_in.unit,
-        zaiko_alert=item_in.zaiko_alert
+        alert_threshold=item_in.alert_threshold
     )
     db.add(db_item)
     db.commit()
@@ -57,7 +57,7 @@ def create_inventory_item(item_in: InventoryItemCreateSchema, db: Session = Depe
         id=db_item.id,
         name=db_item.name,
         unit=db_item.unit,
-        zaiko_alert=float(db_item.zaiko_alert),
+        alert_threshold=float(db_item.alert_threshold),
         current_stock=0.0
     )
 
@@ -69,7 +69,7 @@ def update_inventory_item(item_id: int, item_in: InventoryItemUpdateSchema, db: 
 
     db_item.name = item_in.name
     db_item.unit = item_in.unit
-    db_item.zaiko_alert = item_in.zaiko_alert
+    db_item.alert_threshold = item_in.alert_threshold
     db.commit()
     db.refresh(db_item)
 
@@ -80,7 +80,7 @@ def update_inventory_item(item_id: int, item_in: InventoryItemUpdateSchema, db: 
         id=db_item.id,
         name=db_item.name,
         unit=db_item.unit,
-        zaiko_alert=float(db_item.zaiko_alert),
+        alert_threshold=float(db_item.alert_threshold),
         current_stock=float(stock_sum)
     )
 

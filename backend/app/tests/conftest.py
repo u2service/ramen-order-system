@@ -79,8 +79,8 @@ def seed_master_data(db_session):
     db_session.flush()
 
     # 4. 在庫品目マスタ
-    inv_men = InventoryItem(name="生麺", unit="玉", zaiko_alert=10)
-    inv_egg = InventoryItem(name="味付玉子", unit="個", zaiko_alert=5)
+    inv_men = InventoryItem(name="生麺", unit="玉", alert_threshold=10)
+    inv_egg = InventoryItem(name="味付玉子", unit="個", alert_threshold=5)
     db_session.add_all([inv_men, inv_egg])
     db_session.flush()
 

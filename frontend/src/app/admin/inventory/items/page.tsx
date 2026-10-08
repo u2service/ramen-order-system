@@ -6,7 +6,7 @@ type InventoryItem = {
   id: number;
   name: string;
   unit: string;
-  zaiko_alert: number;
+  alert_threshold: number;
   current_stock: number;
 };
 
@@ -92,7 +92,7 @@ export default function InventoryItemsPage() {
   }, [fetchItems, isAutoRefresh]);
 
   const handleOpenModal = (item?: InventoryItem) => {
-    setEditingItem(item || { name: "", unit: "個", zaiko_alert: 0 });
+    setEditingItem(item || { name: "", unit: "個", alert_threshold: 0 });
     setIsModalOpen(true);
   };
 
@@ -109,7 +109,7 @@ export default function InventoryItemsPage() {
           body: JSON.stringify({
             name: editingItem.name,
             unit: editingItem.unit,
-            zaiko_alert: Number(editingItem.zaiko_alert),
+            alert_threshold: Number(editingItem.alert_threshold),
           }),
         });
         if (res.ok) await fetchItems();
@@ -121,7 +121,7 @@ export default function InventoryItemsPage() {
           body: JSON.stringify({
             name: editingItem.name,
             unit: editingItem.unit,
-            zaiko_alert: Number(editingItem.zaiko_alert),
+            alert_threshold: Number(editingItem.alert_threshold),
           }),
         });
         if (res.ok) await fetchItems();
@@ -212,7 +212,7 @@ export default function InventoryItemsPage() {
             </thead>
             <tbody>
               {items.map((item) => {
-                const isAlert = item.current_stock <= item.zaiko_alert;
+                const isAlert = item.current_stock <= item.alert_threshold;
                 return (
                   <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9", fontSize: "0.95rem" }}>
                     <td style={{ padding: "0.85rem 1rem", color: "#64748b" }}>{item.id}</td>
@@ -222,7 +222,7 @@ export default function InventoryItemsPage() {
                       {item.current_stock.toLocaleString()} {item.unit}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#64748b" }}>
-                      {item.zaiko_alert.toLocaleString()} {item.unit}
+                      {item.alert_threshold.toLocaleString()} {item.unit}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
                       {isAlert ? (
@@ -258,8 +258,8 @@ export default function InventoryItemsPage() {
               <input type="text" value={editingItem?.unit || ""} onChange={(e) => setEditingItem({ ...editingItem, unit: e.target.value })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: "1.5rem" }}>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>発注アラート閾値 (zaiko_alert) *</label>
-              <input type="number" value={editingItem?.zaiko_alert ?? 0} onChange={(e) => setEditingItem({ ...editingItem, zaiko_alert: Number(e.target.value) })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>発注アラート閾値 (alert_threshold) *</label>
+              <input type="number" value={editingItem?.alert_threshold ?? 0} onChange={(e) => setEditingItem({ ...editingItem, alert_threshold: Number(e.target.value) })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
               <button onClick={() => setIsModalOpen(false)} style={{ background: "#f1f5f9", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#475569" }}>キャンセル</button>
