@@ -36,7 +36,7 @@ def get_inventory_items(db: Session = Depends(get_db)):
         result.append(InventoryItemResponseSchema(
             id=item.id,
             name=item.name,
-            tani=item.tani,
+            unit=item.unit,
             zaiko_alert=float(item.zaiko_alert),
             current_stock=float(stock_sum)
         ))
@@ -46,7 +46,7 @@ def get_inventory_items(db: Session = Depends(get_db)):
 def create_inventory_item(item_in: InventoryItemCreateSchema, db: Session = Depends(get_db)):
     db_item = models.InventoryItem(
         name=item_in.name,
-        tani=item_in.tani,
+        unit=item_in.unit,
         zaiko_alert=item_in.zaiko_alert
     )
     db.add(db_item)
@@ -56,7 +56,7 @@ def create_inventory_item(item_in: InventoryItemCreateSchema, db: Session = Depe
     return InventoryItemResponseSchema(
         id=db_item.id,
         name=db_item.name,
-        tani=db_item.tani,
+        unit=db_item.unit,
         zaiko_alert=float(db_item.zaiko_alert),
         current_stock=0.0
     )
@@ -68,7 +68,7 @@ def update_inventory_item(item_id: int, item_in: InventoryItemUpdateSchema, db: 
         raise HTTPException(status_code=404, detail="Item not found")
 
     db_item.name = item_in.name
-    db_item.tani = item_in.tani
+    db_item.unit = item_in.unit
     db_item.zaiko_alert = item_in.zaiko_alert
     db.commit()
     db.refresh(db_item)
@@ -79,7 +79,7 @@ def update_inventory_item(item_id: int, item_in: InventoryItemUpdateSchema, db: 
     return InventoryItemResponseSchema(
         id=db_item.id,
         name=db_item.name,
-        tani=db_item.tani,
+        unit=db_item.unit,
         zaiko_alert=float(db_item.zaiko_alert),
         current_stock=float(stock_sum)
     )
@@ -108,13 +108,13 @@ def get_inventory_lots(db: Session = Depends(get_db)):
                 db.commit()
 
         item_name = lot.inventory_item.name if lot.inventory_item else ""
-        item_tani = lot.inventory_item.tani if lot.inventory_item else ""
+        item_unit = lot.inventory_item.unit if lot.inventory_item else ""
 
         result.append(InventoryLotResponseSchema(
             id=lot.id,
             inventory_item_id=lot.inventory_item_id,
             inventory_item_name=item_name,
-            tani=item_tani,
+            unit=item_unit,
             received_date=lot.received_date,
             expiration_date=lot.expiration_date,
             initial_quantity=float(lot.initial_quantity),
@@ -155,7 +155,7 @@ def create_inventory_lot(lot_in: InventoryLotCreateSchema, db: Session = Depends
         id=db_lot.id,
         inventory_item_id=db_lot.inventory_item_id,
         inventory_item_name=item.name,
-        tani=item.tani,
+        unit=item.unit,
         received_date=db_lot.received_date,
         expiration_date=db_lot.expiration_date,
         initial_quantity=float(db_lot.initial_quantity),
@@ -219,7 +219,7 @@ def update_inventory_lot(lot_id: int, lot_in: InventoryLotCreateSchema, db: Sess
         id=db_lot.id,
         inventory_item_id=db_lot.inventory_item_id,
         inventory_item_name=item.name,
-        tani=item.tani,
+        unit=item.unit,
         received_date=db_lot.received_date,
         expiration_date=db_lot.expiration_date,
         initial_quantity=float(db_lot.initial_quantity),
@@ -264,7 +264,7 @@ def get_product_recipe(product_id: int, db: Session = Depends(get_db)):
             result.append(RecipeItemResponseSchema(
                 inventory_item_id=item.id,
                 inventory_item_name=item.name,
-                tani=item.tani,
+                unit=item.unit,
                 consumed_quantity=float(r.consumed_quantity)
             ))
     return result
@@ -313,7 +313,7 @@ def get_option_recipe(option_id: int, db: Session = Depends(get_db)):
             result.append(RecipeItemResponseSchema(
                 inventory_item_id=item.id,
                 inventory_item_name=item.name,
-                tani=item.tani,
+                unit=item.unit,
                 consumed_quantity=float(r.consumed_quantity)
             ))
     return result

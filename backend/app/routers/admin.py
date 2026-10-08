@@ -119,7 +119,7 @@ def get_inventory_alerts(db: Session = Depends(get_db)):
                 item_name=item.name,
                 current_quantity=total_current_qty,
                 zaiko_alert=item.zaiko_alert,
-                unit=item.tani,
+                unit=item.unit,
                 status="LOW_STOCK"
             ))
 
@@ -137,7 +137,7 @@ def get_inventory_alerts(db: Session = Depends(get_db)):
                 item_name=item.name,
                 current_quantity=total_current_qty,
                 zaiko_alert=item.zaiko_alert,
-                unit=item.tani,
+                unit=item.unit,
                 status="EXPIRING_SOON"
             ))
 

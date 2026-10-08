@@ -202,7 +202,7 @@ class StripeCheckoutResponseSchema(BaseModel):
 # 在庫品目 (InventoryItem) スキーマ
 class InventoryItemBaseSchema(BaseModel):
     name: str
-    tani: str
+    unit: str
     zaiko_alert: float
 
 class InventoryItemCreateSchema(InventoryItemBaseSchema):
@@ -236,7 +236,7 @@ class InventoryLotResponseSchema(BaseModel):
     id: int
     inventory_item_id: int
     inventory_item_name: str = ""
-    tani: str = ""
+    unit: str = ""
     received_date: date
     expiration_date: date
     initial_quantity: float
@@ -270,7 +270,7 @@ class RecipeItemInputSchema(BaseModel):
 class RecipeItemResponseSchema(BaseModel):
     inventory_item_id: int
     inventory_item_name: str
-    tani: str
+    unit: str
     consumed_quantity: float
 
     model_config = ConfigDict(from_attributes=True)

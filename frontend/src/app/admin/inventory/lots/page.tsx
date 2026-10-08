@@ -5,14 +5,14 @@ import { useEffect, useState, useMemo } from "react";
 type InventoryItem = {
   id: number;
   name: string;
-  tani: string;
+  unit: string;
 };
 
 type InventoryLot = {
   id: number;
   inventory_item_id: number;
   inventory_item_name: string;
-  tani: string;
+  unit: string;
   received_date: string;
   expiration_date: string;
   initial_quantity: number;
@@ -223,7 +223,7 @@ export default function InventoryLotsPage() {
                       {lot.expiration_date}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: "bold", color: isDepleted || isDiscarded ? "#94a3b8" : "#0f172a" }}>
-                      {lot.current_quantity.toLocaleString()} / {lot.initial_quantity.toLocaleString()} {lot.tani}
+                      {lot.current_quantity.toLocaleString()} / {lot.initial_quantity.toLocaleString()} {lot.unit}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#334155" }}>¥{lot.unit_cost.toFixed(2)}</td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
@@ -272,7 +272,7 @@ export default function InventoryLotsPage() {
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>対象品目 *</label>
               <select value={selectedItemId} onChange={(e) => setSelectedItemId(Number(e.target.value))} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box", background: "#fff" }}>
                 {items.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name} ({item.tani})</option>
+                  <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>
                 ))}
               </select>
             </div>
@@ -290,7 +290,7 @@ export default function InventoryLotsPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>入荷数量 ({currentSelectedItem?.tani}) *</label>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>入荷数量 ({currentSelectedItem?.unit}) *</label>
                 <input type="number" value={initialQuantity} onChange={(e) => setInitialQuantity(Number(e.target.value))} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
               </div>
               <div>
@@ -300,7 +300,7 @@ export default function InventoryLotsPage() {
             </div>
 
             <div style={{ background: "#f8fafc", padding: "0.75rem", borderRadius: "6px", marginBottom: "1.5rem", border: "1px dashed #cbd5e1", fontSize: "0.875rem", color: "#334155" }}>
-              💡 自動計算仕入単価 (unit_cost): <strong style={{ color: "#2563eb", fontSize: "1rem" }}>¥{computedUnitCost.toFixed(2)}</strong> / {currentSelectedItem?.tani}
+              💡 自動計算仕入単価 (unit_cost): <strong style={{ color: "#2563eb", fontSize: "1rem" }}>¥{computedUnitCost.toFixed(2)}</strong> / {currentSelectedItem?.unit}
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>

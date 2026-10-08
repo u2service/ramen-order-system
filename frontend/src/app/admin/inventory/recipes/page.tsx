@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 type Product = { id: number; name: string; price: number };
 type Option = { id: number; name: string; price: number };
-type InventoryItem = { id: number; name: string; tani: string };
+type InventoryItem = { id: number; name: string; unit: string };
 
 type RecipeRow = {
   inventory_item_id: number;
@@ -261,7 +261,7 @@ export default function RecipeSettingPage() {
                         />
                       </td>
                       <td style={{ padding: "0.5rem", textAlign: "center", color: "#64748b", fontWeight: "bold" }}>
-                        {currentItem?.tani || "-"}
+                        {currentItem?.unit || "-"}
                       </td>
                       <td style={{ padding: "0.5rem", textAlign: "center" }}>
                         <button

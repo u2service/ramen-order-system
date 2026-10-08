@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 type InventoryItem = {
   id: number;
   name: string;
-  tani: string;
+  unit: string;
   zaiko_alert: number;
   current_stock: number;
 };
@@ -92,7 +92,7 @@ export default function InventoryItemsPage() {
   }, [fetchItems, isAutoRefresh]);
 
   const handleOpenModal = (item?: InventoryItem) => {
-    setEditingItem(item || { name: "", tani: "個", zaiko_alert: 0 });
+    setEditingItem(item || { name: "", unit: "個", zaiko_alert: 0 });
     setIsModalOpen(true);
   };
 
@@ -108,7 +108,7 @@ export default function InventoryItemsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: editingItem.name,
-            tani: editingItem.tani,
+            unit: editingItem.unit,
             zaiko_alert: Number(editingItem.zaiko_alert),
           }),
         });
@@ -120,7 +120,7 @@ export default function InventoryItemsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: editingItem.name,
-            tani: editingItem.tani,
+            unit: editingItem.unit,
             zaiko_alert: Number(editingItem.zaiko_alert),
           }),
         });
@@ -217,12 +217,12 @@ export default function InventoryItemsPage() {
                   <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9", fontSize: "0.95rem" }}>
                     <td style={{ padding: "0.85rem 1rem", color: "#64748b" }}>{item.id}</td>
                     <td style={{ padding: "0.85rem 1rem", fontWeight: "600", color: "#0f172a" }}>{item.name}</td>
-                    <td style={{ padding: "0.85rem 1rem", color: "#475569" }}>{item.tani}</td>
+                    <td style={{ padding: "0.85rem 1rem", color: "#475569" }}>{item.unit}</td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontWeight: "bold", color: isAlert ? "#dc2626" : "#0f172a" }}>
-                      {item.current_stock.toLocaleString()} {item.tani}
+                      {item.current_stock.toLocaleString()} {item.unit}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#64748b" }}>
-                      {item.zaiko_alert.toLocaleString()} {item.tani}
+                      {item.zaiko_alert.toLocaleString()} {item.unit}
                     </td>
                     <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
                       {isAlert ? (
@@ -254,8 +254,8 @@ export default function InventoryItemsPage() {
               <input type="text" value={editingItem?.name || ""} onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: "1rem" }}>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>管理単位 (tani) *</label>
-              <input type="text" value={editingItem?.tani || ""} onChange={(e) => setEditingItem({ ...editingItem, tani: e.target.value })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>管理単位 (unit) *</label>
+              <input type="text" value={editingItem?.unit || ""} onChange={(e) => setEditingItem({ ...editingItem, unit: e.target.value })} style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #cbd5e1", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: "1.5rem" }}>
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.3rem" }}>発注アラート閾値 (zaiko_alert) *</label>
