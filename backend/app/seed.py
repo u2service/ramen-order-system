@@ -37,10 +37,10 @@ db.add_all([opt_ajitama, opt_chashu, opt_katame, opt_futsu])
 db.commit()
 
 # 4. 商品作成
-p1 = Product(name="豚骨ラーメン", price=800, category_id=cat_ramen.id, is_active=True, urikire_flag=False)
-p2 = Product(name="醤油ラーメン", price=750, category_id=cat_ramen.id, is_active=True, urikire_flag=False)
-p3 = Product(name="餃子(5個)", price=350, category_id=cat_side.id, is_active=True, urikire_flag=False)
-p4 = Product(name="ライス", price=150, category_id=cat_side.id, is_active=True, urikire_flag=False)
+p1 = Product(name="豚骨ラーメン", price=800, category_id=cat_ramen.id, is_active=True, is_sold_out=False)
+p2 = Product(name="醤油ラーメン", price=750, category_id=cat_ramen.id, is_active=True, is_sold_out=False)
+p3 = Product(name="餃子(5個)", price=350, category_id=cat_side.id, is_active=True, is_sold_out=False)
+p4 = Product(name="ライス", price=150, category_id=cat_side.id, is_active=True, is_sold_out=False)
 db.add_all([p1, p2, p3, p4])
 db.commit()
 

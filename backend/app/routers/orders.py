@@ -39,7 +39,7 @@ def create_order(order_in: OrderCreateSchema, db: Session = Depends(get_db)):
         for item_data in order_in.items:
             # メイン商品の存在・売り切れチェック
             product = db.query(Product).filter_by(id=item_data.product_id).with_for_update().first()
-            if not product or not product.is_active or product.urikire_flag:
+            if not product or not product.is_active or product.is_sold_out:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"商品(ID: {item_data.product_id})は現在注文できません。"
@@ -142,7 +142,7 @@ def create_order(order_in: OrderCreateSchema, db: Session = Depends(get_db)):
             # --- D. セットオプションを「独立した別行の OrderItem (サイドメニュー等)」として追加作成 ---
             for set_opt in set_options:
                 set_product = db.query(Product).filter_by(id=set_opt.linked_product_id).first()
-                if not set_product or not set_product.is_active or set_product.urikire_flag:
+                if not set_product or not set_product.is_active or set_product.is_sold_out:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"セット対象商品(ID: {set_opt.linked_product_id})は現在注文できません。"

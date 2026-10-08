@@ -45,7 +45,7 @@ export type Product = {
   name: string;
   price: number;
   sort_order: number;
-  urikire_flag: boolean;
+  is_sold_out: boolean;
   image_url?: string | null;
   is_active?: boolean;
 };
@@ -55,7 +55,7 @@ export type ProductCreatePayload = {
   name: string;
   price: number;
   sort_order?: number;
-  urikire_flag: boolean;
+  is_sold_out: boolean;
   image_url?: string | null;
   is_active?: boolean;
 };

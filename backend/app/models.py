@@ -56,7 +56,7 @@ class Product(Base):
     price = Column(Integer, nullable=False, default=0)
     image_url = Column(String(255), nullable=True)
     sort_order = Column(Integer, nullable=False, default=0)
-    urikire_flag = Column(Boolean, nullable=False, default=False)
+    is_sold_out = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), default=get_jst_now)
 

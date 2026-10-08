@@ -67,7 +67,7 @@ class ProductSchema(BaseModel):
     name: str
     price: int
     image_url: Optional[str] = None  # ★ 追加
-    urikire_flag: bool
+    is_sold_out: bool
     sort_order: int = 0
     option_groups: List[OptionGroupSchema] = []
 
@@ -80,7 +80,7 @@ class ProductCreateSchema(BaseModel):
     price: int
     image_url: Optional[str] = None  # ★ 追加
     sort_order: int = 0
-    urikire_flag: bool = False
+    is_sold_out: bool = False
     is_active: bool = True
 
 # ★ 管理画面：商品更新用（PUT/PATCH用）
@@ -90,7 +90,7 @@ class ProductUpdateSchema(BaseModel):
     price: Optional[int] = None
     image_url: Optional[str] = None  # ★ 追加
     sort_order: Optional[int] = None
-    urikire_flag: Optional[bool] = None
+    is_sold_out: Optional[bool] = None
     is_active: Optional[bool] = None
 
 # ★ 管理画面：商品レスポンス用（GET/POST/PUT用）

@@ -63,7 +63,7 @@ export default function OrderPage() {
               category: cat.name,
               base_price: prod.price ?? prod.base_price ?? 0,
               sort_order: prod.sort_order ?? 0,
-              is_available: !prod.urikire_flag,
+              is_available: !prod.is_sold_out,
               option_groups: optionGroups,
             };
           });

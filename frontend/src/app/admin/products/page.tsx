@@ -110,13 +110,13 @@ export default function AdminProductsPage() {
         const targetProduct = products.find((p) => p.id === editingId);
         await updateProduct(editingId, {
           ...payload,
-          urikire_flag: targetProduct ? targetProduct.urikire_flag : false,
+          is_sold_out: targetProduct ? targetProduct.is_sold_out : false,
         });
       } else {
         // --- 新規登録モード（POST） ---
         await createProduct({
           ...payload,
-          urikire_flag: false,
+          is_sold_out: false,
         });
       }
 
@@ -151,7 +151,7 @@ export default function AdminProductsPage() {
       await updateProduct(product.id, {
         ...product,
         sort_order: product.sort_order ?? 0,
-        urikire_flag: !product.urikire_flag,
+        is_sold_out: !product.is_sold_out,
       });
       await loadData();
     } catch (error) {
@@ -471,11 +471,11 @@ export default function AdminProductsPage() {
                         cursor: "pointer",
                         fontSize: "0.8rem",
                         fontWeight: "bold",
-                        backgroundColor: prod.urikire_flag ? "#fee2e2" : "#dcfce7",
-                        color: prod.urikire_flag ? "#ef4444" : "#15803d",
+                        backgroundColor: prod.is_sold_out ? "#fee2e2" : "#dcfce7",
+                        color: prod.is_sold_out ? "#ef4444" : "#15803d",
                       }}
                     >
-                      {prod.urikire_flag ? "売り切れ中" : "販売中"}
+                      {prod.is_sold_out ? "売り切れ中" : "販売中"}
                     </button>
 
                     {/* ★ 追加: 有効/無効化ボタン */}

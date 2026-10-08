@@ -60,8 +60,8 @@ def seed_master_data(db_session):
     db_session.flush()
 
     # 2. 商品
-    p_tonkotsu = Product(name="豚骨ラーメン", price=800, category_id=cat_ramen.id, is_active=True, urikire_flag=False)
-    p_gyoza = Product(name="焼き餃子", price=350, category_id=cat_side.id, is_active=True, urikire_flag=False)
+    p_tonkotsu = Product(name="豚骨ラーメン", price=800, category_id=cat_ramen.id, is_active=True, is_sold_out=False)
+    p_gyoza = Product(name="焼き餃子", price=350, category_id=cat_side.id, is_active=True, is_sold_out=False)
     db_session.add_all([p_tonkotsu, p_gyoza])
     db_session.flush()
 

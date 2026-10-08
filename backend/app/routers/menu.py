@@ -12,7 +12,7 @@ def get_menu(db: Session = Depends(get_db)):
     有効なカテゴリ、商品、オプション一覧を取得するAPI[cite: 2]
     - is_active = False の非表示商品は除外[cite: 2]
     - Option.is_active = False の非表示選択肢を除外
-    - urikire_flag = True の商品は売り切れ表示としてフラグを含めて返却[cite: 2]
+    - is_sold_out = True の商品は売り切れ表示としてフラグを含めて返却[cite: 2]
     - ソート順: ① 販売中が優先 ➔ ② sort_order 順[cite: 5]
     """
 
@@ -32,7 +32,7 @@ def get_menu(db: Session = Depends(get_db)):
             .options(joinedload(Product.option_groups).joinedload(OptionGroup.options))
             .filter(Product.category_id == category.id, Product.is_active == True)
             .order_by(
-                Product.urikire_flag.asc(),  # False(販売中)が先、True(売り切れ)が後[cite: 5]
+                Product.is_sold_out.asc(),  # False(販売中)が先、True(売り切れ)が後[cite: 5]
                 Product.sort_order.asc(),    # 指定した並び順の昇順[cite: 5]
                 Product.id.asc()             # sort_orderが同じ場合[cite: 5]
             )
@@ -61,7 +61,7 @@ def get_menu(db: Session = Depends(get_db)):
                 "price": product.price,
                 "image_url": product.image_url, 
                 "sort_order": product.sort_order,
-                "urikire_flag": product.urikire_flag,
+                "is_sold_out": product.is_sold_out,
                 "is_active": product.is_active,
                 "option_groups": formatted_option_groups
             })
