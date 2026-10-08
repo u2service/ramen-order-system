@@ -10,6 +10,7 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 class DashboardSummaryResponse(BaseModel):
     today_sales: int
+    today_cost: int
     today_gross_profit: int
     today_orders: int
     stock_alerts: int
@@ -34,13 +35,16 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     # 本日の売上合計（order.total_price を足し上げる）
     today_sales = sum(order.total_price for order in paid_orders)
 
-    # 本日の粗利合計（明細の (販売単価 - 原価) * 数量 から算出）
-    today_gross_profit = 0
-    for order in paid_orders:
-        for item in order.items:
-            # OrderItem には price, cost_price, quantity が直接定義されている
-            item_cost = item.cost_price or 0
-            today_gross_profit += (item.price - item_cost) * item.quantity
+    # 本日の原価合計（各明細の cost_price * quantity を足し上げる）
+    today_cost = sum(
+        (item.cost_price or 0) * item.quantity
+        for order in paid_orders
+        for item in order.items
+    )
+    print(f"本日の原価合計 today_cost={today_cost}")
+
+    # 本日の粗利合計 = 売上合計 - 原価合計
+    today_gross_profit = today_sales - today_cost
 
     # 2. 本日の全注文数（注文作成日時 created_at が本日0時以降で、キャンセル以外）
     today_orders_count = (
