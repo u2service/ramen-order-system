@@ -15,7 +15,7 @@ export type OptionGroup = {
   id: number;
   name: string;
   is_required: boolean;
-  multi_flag: boolean;
+  is_multiple_choice: boolean;
   options: Option[];
 };
 
@@ -84,7 +84,7 @@ export default function OptionSelectModal({
 
   // オプション選択/解除のトグル処理
   const handleOptionToggle = (group: OptionGroup, option: Option) => {
-    if (group.multi_flag) {
+    if (group.is_multiple_choice) {
       const exists = selectedOptions.some((item) => item.id === option.id);
       if (exists) {
         setSelectedOptions(selectedOptions.filter((item) => item.id !== option.id));

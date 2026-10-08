@@ -14,7 +14,7 @@ type OptionGroup = {
   id: number;
   name: string;
   is_required?: boolean;
-  multi_flag?: boolean;
+  is_multiple_choice?: boolean;
 };
 
 export default function ProductOptionMapping() {

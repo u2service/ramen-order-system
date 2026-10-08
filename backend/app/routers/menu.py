@@ -51,7 +51,7 @@ def get_menu(db: Session = Depends(get_db)):
                     "id": group.id,
                     "name": group.name,
                     "is_required": group.is_required,
-                    "multi_flag": group.multi_flag,
+                    "is_multiple_choice": group.is_multiple_choice,
                     "options": active_options
                 })
 

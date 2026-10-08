@@ -18,7 +18,7 @@ interface OptionGroup {
   id: number;
   name: string;
   is_required: boolean;
-  multi_flag: boolean;
+  is_multiple_choice: boolean;
   options: Option[];
 }
 
@@ -45,7 +45,7 @@ export default function OptionManagementPage() {
   const [groupForm, setGroupForm] = useState({
     name: '',
     is_required: false,
-    multi_flag: false,
+    is_multiple_choice: false,
   });
 
   // 選択肢作成・編集フォーム
@@ -95,7 +95,7 @@ export default function OptionManagementPage() {
   // --- グループ用モーダル制御 ---
   const openCreateGroupModal = () => {
     setEditingGroupId(null);
-    setGroupForm({ name: '', is_required: false, multi_flag: false });
+    setGroupForm({ name: '', is_required: false, is_multiple_choice: false });
     setIsGroupModalOpen(true);
   };
 
@@ -104,7 +104,7 @@ export default function OptionManagementPage() {
     setGroupForm({
       name: group.name,
       is_required: group.is_required,
-      multi_flag: group.multi_flag,
+      is_multiple_choice: group.is_multiple_choice,
     });
     setIsGroupModalOpen(true);
   };
@@ -128,7 +128,7 @@ export default function OptionManagementPage() {
       if (res.ok) {
         setIsGroupModalOpen(false);
         setEditingGroupId(null);
-        setGroupForm({ name: '', is_required: false, multi_flag: false });
+        setGroupForm({ name: '', is_required: false, is_multiple_choice: false });
         fetchGroups();
       } else {
         console.error('Save failed:', await res.json());
@@ -263,7 +263,7 @@ export default function OptionManagementPage() {
                     <div>
                       <div className="font-bold text-gray-800">• {group.name}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        ({group.is_required ? '必須' : '任意'} / {group.multi_flag ? '複数選択' : '単一'})
+                        ({group.is_required ? '必須' : '任意'} / {group.is_multiple_choice ? '複数選択' : '単一'})
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -432,18 +432,18 @@ export default function OptionManagementPage() {
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="radio"
-                    name="multi_flag"
-                    checked={!groupForm.multi_flag}
-                    onChange={() => setGroupForm({ ...groupForm, multi_flag: false })}
+                    name="is_multiple_choice"
+                    checked={!groupForm.is_multiple_choice}
+                    onChange={() => setGroupForm({ ...groupForm, is_multiple_choice: false })}
                   />
                   単一選択 (ラジオ)
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="radio"
-                    name="multi_flag"
-                    checked={groupForm.multi_flag}
-                    onChange={() => setGroupForm({ ...groupForm, multi_flag: true })}
+                    name="is_multiple_choice"
+                    checked={groupForm.is_multiple_choice}
+                    onChange={() => setGroupForm({ ...groupForm, is_multiple_choice: true })}
                   />
                   複数選択 (チェック)
                 </label>

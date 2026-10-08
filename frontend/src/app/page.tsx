@@ -48,7 +48,7 @@ export default function OrderPage() {
               id: grp.id,
               name: grp.name,
               is_required: grp.is_required ?? false,
-              multi_flag: grp.multi_flag ?? false,
+              is_multiple_choice: grp.is_multiple_choice ?? false,
               options: (grp.options || []).map((opt: any) => ({
                 id: opt.id,
                 option_group_id: grp.id,

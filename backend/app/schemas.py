@@ -34,7 +34,7 @@ class OptionGroupSchema(BaseModel):
     id: int
     name: str
     is_required: bool
-    multi_flag: bool
+    is_multiple_choice: bool
     options: List[OptionSchema] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -42,7 +42,7 @@ class OptionGroupSchema(BaseModel):
 class OptionGroupCreateSchema(BaseModel):
     name: str
     is_required: bool = False
-    multi_flag: bool = False
+    is_multiple_choice: bool = False
 
 class OptionGroupResponseSchema(OptionGroupCreateSchema):
     id: int
