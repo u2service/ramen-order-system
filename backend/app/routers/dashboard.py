@@ -65,6 +65,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
 
     return DashboardSummaryResponse(
         today_sales=today_sales,
+        today_cost=today_cost,
         today_gross_profit=today_gross_profit,
         today_orders=today_orders_count,
         stock_alerts=stock_alerts_count,
