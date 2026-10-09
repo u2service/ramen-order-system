@@ -18,6 +18,8 @@ class OrderItemResponse(BaseModel):
     id: int
     menu_item_name: str
     quantity: int
+    price: int
+    cost_price: int
     options: List[str] = []
     status: str  # ★ 明細ごとのステータスを追加
 
@@ -79,6 +81,8 @@ def get_kds_orders(
                 "id": item.id,
                 "menu_item_name": product_name,
                 "quantity": item.quantity,
+                "price": item.price or 0,
+                "cost_price": item.cost_price or 0,
                 "options": opt_names,
                 "status": str(item.status).lower()
             })

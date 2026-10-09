@@ -298,3 +298,34 @@ class DashboardSummarySchema(BaseModel):
     today_sales: int
     today_orders: int
     stock_alerts: int
+
+# ==========================================
+# KDS (厨房・注文履歴) 用スキーマ
+# ==========================================
+
+class KDSOrderItemOptionSchema(BaseModel):
+    id: int
+    name: str
+    price: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+class KDSOrderItemSchema(BaseModel):
+    id: int
+    menu_item_name: str
+    quantity: int
+    price: int          # ★ 追加: 販売価格
+    cost_price: int     # ★ 追加: 原価
+    status: str
+    options: List[KDSOrderItemOptionSchema] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class KDSOrderSchema(BaseModel):
+    id: int
+    table_number: int
+    status: str
+    created_at: datetime
+    items: List[KDSOrderItemSchema] = []
+
+    model_config = ConfigDict(from_attributes=True)
