@@ -69,19 +69,25 @@ def get_kds_orders(
             product = db.query(Product).filter(Product.id == item.product_id).first()
             product_name = product.name if product else "不明な商品"
 
+            # ★ オプションの名前と価格を取得
             item_options = (
-                db.query(Option.name)
+                db.query(Option.name, OrderItemOption.price)
                 .join(OrderItemOption, OrderItemOption.option_id == Option.id)
                 .filter(OrderItemOption.order_item_id == item.id)
                 .all()
             )
             opt_names = [opt[0] for opt in item_options]
+            # ★ トッピング・オプションの価格合計を計算
+            options_total_price = sum(opt[1] or 0 for opt in item_options)
+
+            # ★ 商品単価 + オプション価格合計
+            item_price_with_options = (item.price or 0) + options_total_price
 
             items_data.append({
                 "id": item.id,
                 "menu_item_name": product_name,
                 "quantity": item.quantity,
-                "price": item.price or 0,
+                "price": item_price_with_options,    # ★ オプション価格を含めた単価を返却
                 "cost_price": item.cost_price or 0,
                 "options": opt_names,
                 "status": str(item.status).lower()
