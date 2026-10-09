@@ -275,6 +275,10 @@ export default function OrderHistoryPage() {
                         <div className="space-y-1">
                           <div className="text-base font-semibold text-gray-800">
                             {item.menu_item_name}
+
+                            <span className="ml-2 text-xs text-gray-500 font-normal">
+                              (売: ¥{item.price?.toLocaleString()} / 原: ¥{item.cost_price?.toLocaleString()})
+                            </span>
                             <span className="ml-2 text-sm font-bold text-blue-600">× {item.quantity}</span>
                           </div>
 

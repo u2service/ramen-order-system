@@ -74,6 +74,8 @@ export interface OrderItem {
   id: number;
   menu_item_name: string;
   quantity: number;
+  price?: number;
+  cost_price?: number;
   options: OrderItemOption[];
   status: ItemStatus;
 }
