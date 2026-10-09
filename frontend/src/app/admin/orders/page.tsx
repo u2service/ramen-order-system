@@ -270,46 +270,51 @@ export default function OrderHistoryPage() {
                 {/* 注文明細リスト */}
                 <div className="p-4">
                   <ul className="divide-y divide-gray-100">
-                    {order.items.map((item) => (
-                      <li key={item.id} className="py-2.5 flex items-start justify-between first:pt-0 last:pb-0">
-                        <div className="space-y-1">
-                          <div className="text-base font-semibold text-gray-800">
-                            {item.menu_item_name}
+                    {order.items.map((item) => {
+                      // ブラウザのデベロッパーツール（F12 -> Console）に表示されます
+                      console.log('OrderItem item data:', item);
 
-                            <span className="ml-2 text-xs text-gray-500 font-normal">
-                              (売: ¥{item.price?.toLocaleString()} / 原: ¥{item.cost_price?.toLocaleString()})
-                            </span>
-                            <span className="ml-2 text-sm font-bold text-blue-600">× {item.quantity}</span>
+                      return (
+                        <li key={item.id} className="py-2.5 flex items-start justify-between first:pt-0 last:pb-0">
+                          <div className="space-y-1">
+                            <div className="text-base font-semibold text-gray-800">
+                              {item.menu_item_name}
+
+                              <span className="ml-2 text-xs text-gray-500 font-normal">
+                                (売: ¥{item.price?.toLocaleString()} / 原: ¥{item.cost_price?.toLocaleString()})
+                              </span>
+                              <span className="ml-2 text-sm font-bold text-blue-600">× {item.quantity}</span>
+                            </div>
+
+                            {item.options && item.options.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                {item.options.map((opt: any, idx: number) => {
+                                  const optionName =
+                                    typeof opt === 'object' && opt !== null ? opt.name || opt.id : String(opt);
+
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded border border-gray-200"
+                                    >
+                                      {optionName}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
-                          {item.options && item.options.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-0.5">
-                              {item.options.map((opt: any, idx: number) => {
-                                const optionName =
-                                  typeof opt === 'object' && opt !== null ? opt.name || opt.id : String(opt);
-
-                                return (
-                                  <span
-                                    key={idx}
-                                    className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded border border-gray-200"
-                                  >
-                                    {optionName}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        <span
-                          className={`text-xs px-2.5 py-1 font-medium border rounded-md whitespace-nowrap ${
-                            ITEM_STATUS_LABELS[item.status]?.style || 'text-gray-500 border-gray-200'
-                          }`}
-                        >
-                          {ITEM_STATUS_LABELS[item.status]?.label || item.status}
-                        </span>
-                      </li>
-                    ))}
+                          <span
+                            className={`text-xs px-2.5 py-1 font-medium border rounded-md whitespace-nowrap ${
+                              ITEM_STATUS_LABELS[item.status]?.style || 'text-gray-500 border-gray-200'
+                            }`}
+                          >
+                            {ITEM_STATUS_LABELS[item.status]?.label || item.status}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
