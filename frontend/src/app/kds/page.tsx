@@ -20,6 +20,8 @@ interface OrderItem {
 export default function KDSStreamPage() {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [filter, setFilter] = useState<"all" | "noodle" | "side">("all");
+  // ★ ローディング状態を管理するステートを追加
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // バックエンドからのデータ取得関数
   const fetchKdsOrders = async () => {
@@ -33,7 +35,7 @@ export default function KDSStreamPage() {
         // served（提供完了）および completed 以外のステータスを表示対象とする
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
-            // ★ item.status が served / completed のものは一覧に追加しない（除外する）
+            // item.status が served / completed のものは一覧に追加しない（除外する）
             const itemStatus = item.status || order.status || "pending";
             if (itemStatus !== "served" && itemStatus !== "completed") {
               flatItems.push({
@@ -55,7 +57,7 @@ export default function KDSStreamPage() {
         }
       });
 
-      // ★ 古い注文が上、新しい注文が下（一番下に追加）になるよう昇順ソート
+      // 古い注文が上、新しい注文が下（一番下に追加）になるよう昇順ソート
       flatItems.sort((a, b) => {
         const timeA = new Date(a.created_at).getTime();
         const timeB = new Date(b.created_at).getTime();
@@ -68,6 +70,9 @@ export default function KDSStreamPage() {
       setItems(flatItems);
     } catch (err) {
       console.error("KDSデータの取得エラー:", err);
+    } finally {
+      // ★ 通信完了時にローディングを終了
+      setIsLoading(false);
     }
   };
 
@@ -118,7 +123,7 @@ export default function KDSStreamPage() {
 
   // ステータス更新処理
   const handleStatusChange = async (orderId: number, itemId: number | string, newStatus: string) => {
-    // ★ newStatus が "served" や "completed" の場合は画面のリストから即座に除去する
+    // newStatus が "served" や "completed" の場合は画面のリストから即座に除去する
     if (newStatus === "served" || newStatus === "completed") {
       setItems((prev) => prev.filter((item) => item.id !== itemId));
     } else {
@@ -208,7 +213,14 @@ export default function KDSStreamPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-700 text-xl">
-            {filteredItems.length === 0 ? (
+            {/* ★ 読み込み中の表示制御 */}
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="p-12 text-center text-yellow-400 font-bold animate-pulse text-2xl">
+                  データを読み込み中... ⏳
+                </td>
+              </tr>
+            ) : filteredItems.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-gray-400 font-bold">
                   現在、対象の注文はありません 🍜
@@ -257,21 +269,13 @@ export default function KDSStreamPage() {
                       )}
                     </td>
 
-                    {/* ★ 数量のセルを追加 */}
+                    {/* 数量 */}
                     <td className="p-3 text-center font-extrabold text-2xl text-yellow-400">
                       × {item.quantity}
                     </td>
 
                     {/* ステータス切り替えボタン */}
                     <td className="p-3 text-center">
-                      {/* {item.status === "pending" && (
-                        <button
-                          onClick={() => handleStatusChange(item.order_id, item.id, "cooking")}
-                          className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg text-lg transition"
-                        >
-                          調理を開始
-                        </button>
-                      )} */}
                       {item.status === "cooking" ? (
                         <button
                           onClick={() => handleStatusChange(item.order_id, item.id, "served")}
@@ -280,7 +284,6 @@ export default function KDSStreamPage() {
                           提供完了
                         </button>
                       ) : (
-                        /* pending または その他の未知のステータスの場合は調理開始ボタン（または強制提供完了）を表示 */
                         <button
                           onClick={() => handleStatusChange(item.order_id, item.id, "cooking")}
                           className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg text-lg transition"
