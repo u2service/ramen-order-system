@@ -15,8 +15,6 @@ def get_menu(db: Session = Depends(get_db)):
     - is_sold_out = True の商品は売り切れ表示としてフラグを含めて返却[cite: 2]
     - ソート順: ① 販売中が優先 ➔ ② sort_order 順[cite: 5]
     """
-
-    print("ここまで来た")
     
     categories = (
         db.query(Category)
