@@ -1,6 +1,6 @@
 from datetime import datetime
 import zoneinfo
-from sqlalchemy import Column, Integer, String, Boolean, Numeric, Date, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, Numeric, Date, DateTime, ForeignKey, func, Index, text
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -113,6 +113,24 @@ class Order(Base):
 
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
+    # --- 部分インデックスの追加 ---
+    __table_args__ = (
+        # 1. KDS & POS 卓一覧用: 未完了・未会計の注文を高速検索するインデックス
+        Index(
+            "idx_orders_active",
+            "id",
+            "table_number",
+            "created_at",
+            postgresql_where=text("status NOT IN ('completed', 'served', 'paid', 'cancelled')"),
+        ),
+        # 2. POS 会計伝票用: 卓ごとの未払い注文 (paid_at IS NULL) を高速検索
+        Index(
+            "idx_orders_unpaid_by_table",
+            "table_number",
+            postgresql_where=text("paid_at IS NULL AND status != 'cancelled'"),
+        ),
+    )
+
 # 6. 注文明細
 class OrderItem(Base):
     __tablename__ = "order_items"
@@ -132,6 +150,16 @@ class OrderItem(Base):
     order_item_options = relationship("OrderItemOption", back_populates="order_item", cascade="all, delete-orphan")
     options = relationship("OrderItemOption", overlaps="order_item_options")
 
+    # --- 部分インデックスの追加 ---
+    __table_args__ = (
+        # 未提供の明細のみを対象とするインデックス
+        Index(
+            "idx_order_items_active",
+            "order_id",
+            postgresql_where=text("status NOT IN ('completed', 'served', 'cancelled')"),
+        ),
+    )
+    
 # 7. 注文明細オプション選択
 class OrderItemOption(Base):
     __tablename__ = "order_item_options"
