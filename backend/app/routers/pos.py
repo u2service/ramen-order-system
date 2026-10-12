@@ -56,7 +56,7 @@ def get_active_tables(db: Session = Depends(get_db)):
     # completed, cancelled 以外の注文がある卓番号を取得
     active_orders = (
         db.query(Order.table_number)
-        .filter(Order.status.notin_(["completed", "cancelled", "paid"])) # ← "paid" を追加
+        .filter(Order.status.notin_(["completed", "served", "paid", "cancelled"]))
         .distinct()
         .all()
     )

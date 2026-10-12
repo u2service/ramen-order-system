@@ -1,8 +1,8 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, time
 from decimal import Decimal
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy import func
 from pydantic import BaseModel
 
@@ -14,7 +14,8 @@ from app.models import (
     Order, 
     OrderItem, 
     Product,
-    OptionGroup
+    OptionGroup,
+    OrderItemOption
 )
 from app.schemas import (
     CategoryCreateSchema,
@@ -27,6 +28,8 @@ from app.schemas import (
     ProductUpdateSchema,
     ProductResponseSchema
 )
+
+from app.routers.kds import OrderResponse # レスポンススキーマを流用
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -253,3 +256,81 @@ def update_product_option_groups(
     db.commit()
 
     return {"message": "オプショングループの紐付けを更新しました。"}
+
+
+# ==========================================
+# 0.4 管理画面　注文履歴用 API
+# ==========================================
+
+@router.get("/orders", response_model=List[OrderResponse])
+def get_admin_orders(
+    target_date: Optional[str] = Query(None, alias="date", description="検索対象の日付 (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    """管理画面用: 会計済み・提供済みを含む全注文履歴を取得"""
+    query = (
+        db.query(Order)
+        .options(
+            selectinload(Order.items).joinedload(OrderItem.product),
+            selectinload(Order.items)
+            .selectinload(OrderItem.order_item_options)
+            .joinedload(OrderItemOption.option)
+        )
+    )
+
+    if target_date:
+        try:
+            parsed_date = datetime.strptime(target_date, "%Y-%m-%d").date()
+            start_datetime = datetime.combine(parsed_date, time.min)
+            end_datetime = datetime.combine(parsed_date, time.max)
+            query = query.filter(
+                Order.created_at >= start_datetime,
+                Order.created_at <= end_datetime
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    orders = query.order_by(Order.id.desc()).all()
+
+    # レスポンス用データの整形
+    result = []
+    for order in orders:
+        items_data = []
+        for item in order.items:
+            product_name = item.product.name if item.product else "不明な商品"
+
+            opt_names = []
+            options_total_price = 0
+            for oio in item.order_item_options:
+                if oio.option:
+                    opt_names.append(oio.option.name)
+                options_total_price += (oio.price or 0)
+
+            item_price_with_options = (item.price or 0) + options_total_price
+
+            items_data.append({
+                "id": item.id,
+                "menu_item_name": product_name,
+                "quantity": item.quantity,
+                "price": item_price_with_options,
+                "cost_price": item.cost_price or 0,
+                "options": opt_names,
+                "status": str(item.status).lower()
+            })
+
+        created_at_val = ""
+        if getattr(order, "created_at", None):
+            try:
+                created_at_val = order.created_at.isoformat()
+            except AttributeError:
+                created_at_val = str(order.created_at)
+
+        result.append({
+            "id": order.id,
+            "table_number": order.table_number,
+            "status": str(order.status).lower(),
+            "created_at": created_at_val,
+            "items": items_data
+        })
+
+    return result

@@ -52,7 +52,7 @@ def get_kds_orders(
             .selectinload(OrderItem.order_item_options)
             .joinedload(OrderItemOption.option)
         )
-        .filter(Order.status != "cancelled")
+        .filter(Order.status.notin_(["completed", "served", "paid", "cancelled"]))
     )
 
     # 提供完了・精算完了済みの注文を除外（未提供の注文に絞り込み）

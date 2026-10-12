@@ -47,7 +47,7 @@ export default function OrderHistoryPage() {
   const fetchAllOrderDates = useCallback(async () => {
     try {
       // 全注文を取得して日付を収集 (バックエンドに専用エンドポイントがある場合はそちらを呼び出します)
-      const response = await fetch(`${API_BASE_URL}/kds/orders`);
+      const response = await fetch(`${API_BASE_URL}/admin/orders`);
       if (response.ok) {
         const allOrders: Order[] = await response.json();
         // 注文データの created_at から YYYY-MM-DD を抽出して重複を除去
@@ -79,7 +79,7 @@ export default function OrderHistoryPage() {
 
       try {
         const response = await fetch(
-          `${API_BASE_URL}/kds/orders?date=${dateStr}`
+          `${API_BASE_URL}/admin/orders?date=${dateStr}`
         );
         if (!response.ok) {
           throw new Error('注文履歴の取得に失敗しました');
