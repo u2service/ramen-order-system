@@ -121,13 +121,13 @@ class Order(Base):
             "id",
             "table_number",
             "created_at",
-            postgresql_where=text("status NOT IN ('completed', 'served', 'paid', 'cancelled')"),
+            postgresql_where=text("status != 'paid'"),
         ),
         # 2. POS 会計伝票用: 卓ごとの未払い注文 (paid_at IS NULL) を高速検索
         Index(
             "idx_orders_unpaid_by_table",
             "table_number",
-            postgresql_where=text("paid_at IS NULL AND status != 'cancelled'"),
+            postgresql_where=text("status != 'paid'"),
         ),
     )
 
@@ -156,7 +156,7 @@ class OrderItem(Base):
         Index(
             "idx_order_items_active",
             "order_id",
-            postgresql_where=text("status NOT IN ('completed', 'served', 'cancelled')"),
+            postgresql_where=text("status NOT IN ('served', 'cancelled')"),
         ),
     )
     

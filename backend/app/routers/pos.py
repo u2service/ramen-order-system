@@ -56,7 +56,7 @@ def get_active_tables(db: Session = Depends(get_db)):
     # completed, cancelled 以外の注文がある卓番号を取得
     active_orders = (
         db.query(Order.table_number)
-        .filter(Order.status.notin_(["completed", "served", "paid", "cancelled"]))
+        .filter(Order.status != "paid")
         .distinct()
         .all()
     )
@@ -69,8 +69,7 @@ def get_active_tables(db: Session = Depends(get_db)):
 def get_table_bill(table_number: int, db: Session = Depends(get_db)):
     unpaid_orders = db.query(Order).filter(
         Order.table_number == table_number,
-        Order.paid_at.is_(None),
-        Order.status != "cancelled"
+        Order.status != "paid"
     ).all()
 
     if not unpaid_orders:
@@ -203,8 +202,7 @@ def apply_discount(order_id: int, payload: DiscountSchema, db: Session = Depends
 def checkout_cash(payload: CashCheckoutSchema, db: Session = Depends(get_db)):
     unpaid_orders = db.query(Order).filter(
         Order.table_number == payload.table_number,
-        Order.paid_at.is_(None),
-        Order.status != "cancelled"
+        Order.status != "paid"
     ).all()
 
     if not unpaid_orders:
