@@ -36,15 +36,16 @@ def recalculate_order_total(order: Order):
             continue
         discount = getattr(item, "discount_amount", 0)
                 
-        # 1品あたりの基本価格（割引後）
-        effective_price = max(0, item.price - discount)
-                
-        # オプション合計
+        # オプション（トッピング）の合計
         options = getattr(item, "order_item_options", getattr(item, "options", []))
         option_total = sum(opt.price for opt in options)
         
-        # (商品割引後価格 + オプション価格) * 数量
-        item_total = (effective_price + option_total) * item.quantity
+        # ▼【修正】「（商品価格 + オプション合計）」から「割引額」を引く
+        item_base_total = item.price + option_total
+        item_effective_total = max(0, item_base_total - discount)
+        
+        # 数量を掛けて加算
+        item_total = item_effective_total * item.quantity
         total += item_total
 
     order.total_price = total
@@ -175,17 +176,32 @@ def apply_discount(order_id: int, payload: DiscountSchema, db: Session = Depends
         raise HTTPException(status_code=404, detail="注文データが見つかりません。")
 
     if payload.is_full_comp:
-        # 伝票全体サービス（全明細を100%引き）
+        # 伝票全体サービス（全明細をトッピング込みで100%引き）
         for item in order.items:
             if item.status != "cancelled":
                 item.discount_type = "comp"
-                item.discount_amount = item.price
+
+                # オプション（トッピング）の合計金額を計算する
+                options = getattr(item, "order_item_options", getattr(item, "options", []))
+                option_total = sum(opt.price for opt in options)
+                print(f"オプション（トッピング）の合計金額 option_total={option_total}")
+                
+                # 「商品価格 + オプション合計」をそのまま割引額に設定
+                item.discount_amount = item.price + option_total
+                print(f"割引額 item.discount_amount={item.discount_amount}")
+
     elif payload.order_item_id:
-        # 特定商品のみ100%引き
+        # 特定商品のみ（トッピング込みで）100%引き
         item = db.query(OrderItem).filter(OrderItem.id == payload.order_item_id).first()
         if item and item.status != "cancelled":
             item.discount_type = "100_percent_off"
-            item.discount_amount = item.price
+            
+            # オプション（トッピング）の合計金額を計算する
+            options = getattr(item, "order_item_options", getattr(item, "options", []))
+            option_total = sum(opt.price for opt in options)
+            
+            # 「商品価格 + オプション合計」を割引額に設定
+            item.discount_amount = item.price + option_total
 
     recalculate_order_total(order)
     db.commit()
