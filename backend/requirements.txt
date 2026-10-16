@@ -9,3 +9,4 @@ python-multipart
 pytest
 pytest-asyncio
 supabase
+pyjwt>=2.15.1

@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List, Optional
@@ -10,7 +11,8 @@ from app.models import Order, OrderItem, OrderItemOption, Option, Product
 
 router = APIRouter(
     prefix="/kds",
-    tags=["KDS"]
+    tags=["KDS"],
+    dependencies=[Depends(require_roles(["admin", "kitchen"]))]
 )
 
 # レスポンス用 Pydantic スキーマ

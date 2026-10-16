@@ -1,5 +1,6 @@
 "use client";
 
+import ProtectedRoute from '@/components/ProtectedRoute';
 import React, { useState, useEffect } from "react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -161,144 +162,146 @@ export default function KDSStreamPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 font-sans">
-      {/* ヘッダーエリア */}
-      <header className="flex justify-between items-center bg-gray-800 p-4 rounded-lg mb-4 border border-gray-700">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-yellow-400">🍜 厨房リスト</h1>
-          <span className="bg-red-600 text-white px-3 py-1 rounded-full font-bold text-sm">
-            未提供: {items.filter((i) => i.status !== "served" && i.status !== "completed").length}品
-          </span>
-        </div>
+    <ProtectedRoute allowedRoles={['admin', 'kitchen']}>
+      <div className="min-h-screen bg-gray-900 text-white p-4 font-sans">
+        {/* ヘッダーエリア */}
+        <header className="flex justify-between items-center bg-gray-800 p-4 rounded-lg mb-4 border border-gray-700">
+          <div className="flex items-center gap-6">
+            <h1 className="text-2xl font-bold text-yellow-400">🍜 厨房リスト</h1>
+            <span className="bg-red-600 text-white px-3 py-1 rounded-full font-bold text-sm">
+              未提供: {items.filter((i) => i.status !== "served" && i.status !== "completed").length}品
+            </span>
+          </div>
 
-        {/* 絞り込みタブボタン */}
-        <div className="flex gap-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md font-bold text-sm transition ${
-              filter === "all" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
-          >
-            全表示
-          </button>
-          <button
-            onClick={() => setFilter("noodle")}
-            className={`px-4 py-2 rounded-md font-bold text-sm transition ${
-              filter === "noodle" ? "bg-yellow-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
-          >
-            🍜 麺類のみ
-          </button>
-          <button
-            onClick={() => setFilter("side")}
-            className={`px-4 py-2 rounded-md font-bold text-sm transition ${
-              filter === "side" ? "bg-green-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
-          >
-            🥟 サイドのみ
-          </button>
-        </div>
-      </header>
+          {/* 絞り込みタブボタン */}
+          <div className="flex gap-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 rounded-md font-bold text-sm transition ${
+                filter === "all" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              全表示
+            </button>
+            <button
+              onClick={() => setFilter("noodle")}
+              className={`px-4 py-2 rounded-md font-bold text-sm transition ${
+                filter === "noodle" ? "bg-yellow-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              🍜 麺類のみ
+            </button>
+            <button
+              onClick={() => setFilter("side")}
+              className={`px-4 py-2 rounded-md font-bold text-sm transition ${
+                filter === "side" ? "bg-green-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              🥟 サイドのみ
+            </button>
+          </div>
+        </header>
 
-      {/* アイテムストリーム表示（テーブル形式） */}
-      <div className="overflow-x-auto bg-gray-800 rounded-lg border border-gray-700">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-700 text-gray-300 border-b border-gray-600 text-lg">
-              <th className="p-3 w-16 text-center">卓</th>
-              <th className="p-3 w-20 text-center">経過</th>
-              <th className="p-3">商品・カスタマイズ内容</th>
-              <th className="p-3 w-20 text-center">数量</th>
-              <th className="p-3 w-48 text-center">ステータス操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700 text-xl">
-            {/* ★ 読み込み中の表示制御 */}
-            {isLoading ? (
-              <tr>
-                <td colSpan={5} className="p-12 text-center text-yellow-400 font-bold animate-pulse text-2xl">
-                  データを読み込み中... ⏳
-                </td>
+        {/* アイテムストリーム表示（テーブル形式） */}
+        <div className="overflow-x-auto bg-gray-800 rounded-lg border border-gray-700">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-700 text-gray-300 border-b border-gray-600 text-lg">
+                <th className="p-3 w-16 text-center">卓</th>
+                <th className="p-3 w-20 text-center">経過</th>
+                <th className="p-3">商品・カスタマイズ内容</th>
+                <th className="p-3 w-20 text-center">数量</th>
+                <th className="p-3 w-48 text-center">ステータス操作</th>
               </tr>
-            ) : filteredItems.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-400 font-bold">
-                  現在、対象の注文はありません 🍜
-                </td>
-              </tr>
-            ) : (
-              filteredItems.map((item, index) => {
-                const elapsed = getElapsedMinutes(item.created_at);
-                const isSameTableAsPrevious =
-                  index > 0 && filteredItems[index - 1].table_number === item.table_number;
+            </thead>
+            <tbody className="divide-y divide-gray-700 text-xl">
+              {/* ★ 読み込み中の表示制御 */}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="p-12 text-center text-yellow-400 font-bold animate-pulse text-2xl">
+                    データを読み込み中... ⏳
+                  </td>
+                </tr>
+              ) : filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-gray-400 font-bold">
+                    現在、対象の注文はありません 🍜
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map((item, index) => {
+                  const elapsed = getElapsedMinutes(item.created_at);
+                  const isSameTableAsPrevious =
+                    index > 0 && filteredItems[index - 1].table_number === item.table_number;
 
-                return (
-                  <tr
-                    key={`${item.id}-${index}`}
-                    className={`hover:bg-gray-750 transition ${
-                      isSameTableAsPrevious ? "border-t-0" : "border-t-2 border-gray-500"
-                    }`}
-                  >
-                    {/* 卓番号 */}
-                    <td className="p-3 text-center font-extrabold text-2xl bg-gray-800 text-yellow-300">
-                      {item.table_number}
-                    </td>
+                  return (
+                    <tr
+                      key={`${item.id}-${index}`}
+                      className={`hover:bg-gray-750 transition ${
+                        isSameTableAsPrevious ? "border-t-0" : "border-t-2 border-gray-500"
+                      }`}
+                    >
+                      {/* 卓番号 */}
+                      <td className="p-3 text-center font-extrabold text-2xl bg-gray-800 text-yellow-300">
+                        {item.table_number}
+                      </td>
 
-                    {/* 経過時間 */}
-                    <td className="p-3 text-center font-bold">
-                      <span
-                        className={`px-2 py-1 rounded ${
-                          elapsed >= 10
-                            ? "bg-red-600 text-white animate-pulse"
-                            : elapsed >= 5
-                            ? "bg-yellow-600 text-white"
-                            : "text-gray-300"
-                        }`}
-                      >
-                        {String(elapsed).padStart(2, "0")}分
-                      </span>
-                    </td>
-
-                    {/* 商品・オプション情報 */}
-                    <td className="p-3">
-                      <div className="font-bold text-white text-2xl">{item.product_name}</div>
-                      {item.options && item.options.length > 0 && (
-                        <div className="text-lg text-yellow-200 mt-1 pl-4">
-                          └ {item.options.join(", ")}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* 数量 */}
-                    <td className="p-3 text-center font-extrabold text-2xl text-yellow-400">
-                      × {item.quantity}
-                    </td>
-
-                    {/* ステータス切り替えボタン */}
-                    <td className="p-3 text-center">
-                      {item.status === "cooking" ? (
-                        <button
-                          onClick={() => handleStatusChange(item.order_id, item.id, "served")}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-lg transition"
+                      {/* 経過時間 */}
+                      <td className="p-3 text-center font-bold">
+                        <span
+                          className={`px-2 py-1 rounded ${
+                            elapsed >= 10
+                              ? "bg-red-600 text-white animate-pulse"
+                              : elapsed >= 5
+                              ? "bg-yellow-600 text-white"
+                              : "text-gray-300"
+                          }`}
                         >
-                          提供完了
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleStatusChange(item.order_id, item.id, "cooking")}
-                          className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg text-lg transition"
-                        >
-                          調理を開始
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          {String(elapsed).padStart(2, "0")}分
+                        </span>
+                      </td>
+
+                      {/* 商品・オプション情報 */}
+                      <td className="p-3">
+                        <div className="font-bold text-white text-2xl">{item.product_name}</div>
+                        {item.options && item.options.length > 0 && (
+                          <div className="text-lg text-yellow-200 mt-1 pl-4">
+                            └ {item.options.join(", ")}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* 数量 */}
+                      <td className="p-3 text-center font-extrabold text-2xl text-yellow-400">
+                        × {item.quantity}
+                      </td>
+
+                      {/* ステータス切り替えボタン */}
+                      <td className="p-3 text-center">
+                        {item.status === "cooking" ? (
+                          <button
+                            onClick={() => handleStatusChange(item.order_id, item.id, "served")}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-lg transition"
+                          >
+                            提供完了
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStatusChange(item.order_id, item.id, "cooking")}
+                            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg text-lg transition"
+                          >
+                            調理を開始
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

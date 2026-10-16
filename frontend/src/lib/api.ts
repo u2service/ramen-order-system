@@ -1,11 +1,21 @@
 import axios from 'axios';
 import { Category, Product, ProductCreatePayload } from "@/types";
+import { getAuthToken } from "@/lib/auth";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// リクエスト送信時に自動で Authorization ヘッダーを付与
+api.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // カテゴリ関連

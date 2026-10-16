@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from datetime import date, datetime, timedelta, timezone, time
 from decimal import Decimal
 from typing import List, Optional
@@ -31,7 +32,11 @@ from app.schemas import (
 
 from app.routers.kds import OrderResponse # レスポンススキーマを流用
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    dependencies=[Depends(require_roles(["admin"]))]
+)
 
 # ==========================================
 # 0. カテゴリ管理 API

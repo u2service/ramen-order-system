@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone, timedelta, time
@@ -6,7 +7,11 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import Order, InventoryLot  # 在庫数確認用モデルもインポート
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(
+    prefix="/dashboard",
+    tags=["Dashboard"],
+    dependencies=[Depends(require_roles(["admin"]))]
+)
 
 class DashboardSummaryResponse(BaseModel):
     today_sales: int

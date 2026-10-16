@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -17,7 +18,11 @@ from app.schemas import (
     RecipeItemResponseSchema
 )
 
-router = APIRouter(prefix="/inventory", tags=["inventory"])
+router = APIRouter(
+    prefix="/inventory",
+    tags=["inventory"],
+    dependencies=[Depends(require_roles(["admin"]))]
+)
 
 # --- 在庫品目マスタ (InventoryItems) API ---
 

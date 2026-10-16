@@ -1,6 +1,7 @@
 import os
 import uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
+from app.auth import require_roles
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from pathlib import Path
@@ -10,7 +11,11 @@ env_path = Path(__file__).resolve().parent.parent.parent / ".env"
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 
-router = APIRouter(prefix="/upload", tags=["upload"])
+router = APIRouter(
+    prefix="/upload",
+    tags=["upload"],
+    dependencies=[Depends(require_roles(["admin"]))]
+)
 
 # Supabase クライアントの初期化
 SUPABASE_URL = os.getenv("SUPABASE_URL")

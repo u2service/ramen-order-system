@@ -8,7 +8,7 @@ from app.database import engine, Base
 from app.routers import (
     menu, orders, kds, pos, 
     admin, options, inventory, 
-    dashboard, upload
+    dashboard, upload, auth
 )
 
 from dotenv import load_dotenv
@@ -52,6 +52,7 @@ app.add_middleware(
 )
 
 # 各ルーターの読み込み (SQLAlchemy経由でSupabaseにアクセス)
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(menu.router, prefix="/api/v1")
 app.include_router(orders.router, prefix="/api/v1")
 app.include_router(kds.router, prefix="/api/v1")

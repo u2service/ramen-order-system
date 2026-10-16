@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -13,7 +14,11 @@ from app.schemas import (
     ProductOptionGroupSyncSchema,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin-options"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin-options"],
+    dependencies=[Depends(require_roles(["admin"]))]
+)
 
 # ==========================================
 # 1. オプショングループ API

@@ -1,3 +1,4 @@
+from app.auth import require_roles
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
@@ -14,7 +15,11 @@ from app.schemas import (
     StripeCheckoutResponseSchema,
 )
 
-router = APIRouter(prefix="/pos", tags=["pos"])
+router = APIRouter(
+    prefix="/pos",
+    tags=["pos"],
+    dependencies=[Depends(require_roles(["admin", "cashier"]))]
+)
 
 # --- 追加リクエストスキーマ ---
 class CancelItemSchema(BaseModel):
