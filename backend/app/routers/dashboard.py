@@ -1,11 +1,12 @@
 from app.auth import require_roles
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone, timedelta, time
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.models import Order, InventoryLot  # 在庫数確認用モデルもインポート
+from app.models import Order, InventoryLot, InventoryItem
 
 router = APIRouter(
     prefix="/dashboard",
@@ -58,14 +59,21 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         .count()
     )
 
-    # 3. 在庫アラート数（在庫数が5以下、または status が 'depleted'）
-    stock_alerts_count = (
-        db.query(InventoryLot)
-        .filter(
-            (InventoryLot.current_quantity <= 5) | (InventoryLot.status == "depleted")
+    # 3. 在庫アラート数（各品目の有効在庫合計がアラート閾値以下の品目数をカウント）
+    items = db.query(InventoryItem).all()
+    stock_alerts_count = 0
+    for item in items:
+        stock_sum = (
+            db.query(func.coalesce(func.sum(InventoryLot.current_quantity), 0))
+            .filter(
+                InventoryLot.inventory_item_id == item.id,
+                InventoryLot.status == "active",  # 有効なロットのみ対象
+            )
+            .scalar()
         )
-        .count()
-    )
+        # 現在の有効在庫数がアラート閾値以下ならアラート件数に加算
+        if stock_sum <= item.alert_threshold:
+            stock_alerts_count += 1
 
     return DashboardSummaryResponse(
         today_sales=today_sales,
