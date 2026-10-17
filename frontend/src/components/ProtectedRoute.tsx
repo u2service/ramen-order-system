@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getAuthToken, getAuthUser, clearAuth } from '@/lib/auth';
 import { LogOut, ShieldAlert } from 'lucide-react';
@@ -16,18 +16,26 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
   const [authorized, setAuthorized] = useState<boolean>(false);
   const user = getAuthUser();
 
+  //  多重実行防止用の ref フラグを用意
+  const isRedirectingRef = useRef(false);
+
   useEffect(() => {
+      // すでにリダイレクト処理中なら何もしない
+    if (isRedirectingRef.current) return;
+
     const token = getAuthToken();
     const currentUser = getAuthUser();
 
     if (!token || !currentUser) {
+      isRedirectingRef.current = true;
       // 未ログインならログイン画面へ
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
     if (!allowedRoles.includes(currentUser.role)) {
-      // 権限不足
+      // 3. アラートを出す前にフラグを true にして多重実行をブロック
+      isRedirectingRef.current = true;
       alert(`この画面へのアクセス権限がありません。（必要ロール: ${allowedRoles.join(', ')} / 現在: ${currentUser.role}）`);
       router.replace('/login');
       return;
