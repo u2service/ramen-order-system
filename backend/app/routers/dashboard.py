@@ -59,21 +59,22 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
         .count()
     )
 
-    # 3. 在庫アラート数（各品目の有効在庫合計がアラート閾値以下の品目数をカウント）
-    items = db.query(InventoryItem).all()
-    stock_alerts_count = 0
-    for item in items:
-        stock_sum = (
-            db.query(func.coalesce(func.sum(InventoryLot.current_quantity), 0))
-            .filter(
-                InventoryLot.inventory_item_id == item.id,
-                InventoryLot.status == "active",  # 有効なロットのみ対象
-            )
-            .scalar()
+    # 3. 在庫アラート数（SQL 1本で集計）
+    # 有効ロットが0件（在庫切れ）の品目も拾えるよう InventoryItem を起点に LEFT OUTER JOIN
+    stock_alerts_count = (
+        db.query(InventoryItem.id)
+        .outerjoin(
+            InventoryLot,
+            (InventoryLot.inventory_item_id == InventoryItem.id)
+            & (InventoryLot.status == "active"),
         )
-        # 現在の有効在庫数がアラート閾値以下ならアラート件数に加算
-        if stock_sum <= item.alert_threshold:
-            stock_alerts_count += 1
+        .group_by(InventoryItem.id, InventoryItem.alert_threshold)
+        .having(
+            func.coalesce(func.sum(InventoryLot.current_quantity), 0)
+            <= InventoryItem.alert_threshold
+        )
+        .count()
+    )
 
     return DashboardSummaryResponse(
         today_sales=today_sales,

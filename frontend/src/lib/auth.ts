@@ -50,6 +50,14 @@ if (typeof window !== 'undefined') {
       }
       init.headers = headers;
     }
-    return originalFetch(input, init);
+    const response = await originalFetch(input, init);
+
+    // ★ 401 (認証切れ) を検知した場合、古いセッションをクリアしてログイン画面へリダイレクト
+    if (response.status === 401 && !window.location.pathname.startsWith('/login')) {
+      clearAuth();
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    }
+
+    return response;
   };
 }
