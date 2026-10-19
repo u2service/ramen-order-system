@@ -116,44 +116,41 @@
 
 主要なテーブル構造：
 
+```mermaid
+erDiagram
+    Category ||--o{ Product : contains
+    Product ||--o{ ProductOptionGroup : has
+    OptionGroup ||--o{ ProductOptionGroup : belongs
+    OptionGroup ||--o{ Option : contains
+    Product ||--o{ ProductInventoryItem : recipe
+    Option ||--o{ OptionInventoryItem : recipe
+    InventoryItem ||--o{ ProductInventoryItem : consumed_by
+    InventoryItem ||--o{ OptionInventoryItem : consumed_by
+    InventoryItem ||--o{ InventoryLot : lots
 
-       Diagram (unsupported type)                                                                                                                          
-      ──────────────────────────────                                                                                                                         
-      erDiagram
-          Category ||--o{ Product : contains                                                                                                                 
-          Product ||--o{ ProductOptionGroup : has                                                                                                            
-          OptionGroup ||--o{ ProductOptionGroup : belongs                                                                                                    
-          OptionGroup ||--o{ Option : contains                                                                                                               
-          Product ||--o{ ProductInventoryItem : recipe                                                                                                       
-          Option ||--o{ OptionInventoryItem : recipe                                                                                                         
-          InventoryItem ||--o{ ProductInventoryItem : consumed_by                                                                                            
-          InventoryItem ||--o{ OptionInventoryItem : consumed_by                                                                                             
-          InventoryItem ||--o{ InventoryLot : lots                                                                                                           
+    Order ||--o{ OrderItem : details
+    Product ||--o{ OrderItem : ordered_as
+    OrderItem ||--o{ OrderItemOption : has_options
+    Option ||--o{ OrderItemOption : chosen
 
-          Order ||--o{ OrderItem : details                                                                                                                   
-          Product ||--o{ OrderItem : ordered_as                                                                                                              
-          OrderItem ||--o{ OrderItemOption : has_options                                                                                                     
-          Option ||--o{ OrderItemOption : chosen                                                                                                             
+    Order {
+        int id PK
+        int table_number
+        string status "pending / served / paid"
+        int total_price
+        string payment_method
+        datetime created_at
+        datetime paid_at
+    }
 
-          Order {
-              int id PK
-              int table_number
-              string status "pending / served / paid"                                                                                                        
-              int total_price
-              string payment_method                                                                                                                          
-              datetime created_at                                                                                                                            
-              datetime paid_at
-          }
-
-          InventoryLot {
-              int id PK
-              int inventory_item_id FK                                                                                                                       
-              date expiration_date                                                                                                                           
-              decimal current_quantity                                                                                                                       
-              decimal unit_cost
-              string status "active / expired / empty"                                                                                                       
-          }
-
+    InventoryLot {
+        int id PK
+        int inventory_item_id FK
+        date expiration_date
+        decimal current_quantity
+        decimal unit_cost
+        string status "active / expired / empty"
+    }
 
 ---
 
