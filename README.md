@@ -154,7 +154,7 @@ erDiagram
         decimal unit_cost
         string status "active / expired / empty"                                                                                                       
     }
-
+```
 
 ---
 
