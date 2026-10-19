@@ -1,3 +1,6 @@
+import os
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+
 import pytest
 from datetime import date, timedelta
 from sqlalchemy import create_engine
