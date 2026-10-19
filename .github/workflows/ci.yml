@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  # -------------------------------------------------------------
+  # バックエンド: Lint & テスト
+  # -------------------------------------------------------------
+  backend:
+    name: Backend Test & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8  # バックエンドの構文・未定義変数チェック用
+
+      - name: Run Backend Lint (flake8)
+        run: |
+          # 重大な構文エラーや未定義シンボルのみを検知してストップ
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Backend Tests (pytest)
+        run: |
+          pytest
+
+  # -------------------------------------------------------------
+  # フロントエンド: Lint & 型チェック
+  # -------------------------------------------------------------
+  frontend:
+    name: Frontend Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Frontend Lint (ESLint)
+        run: npm run lint
+
+      - name: Run Type Check (TypeScript)
+        run: npx tsc --noEmit
