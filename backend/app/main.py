@@ -63,7 +63,7 @@ app.include_router(inventory.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(upload.router, prefix="/api/v1")  # ★ 画像アップロードAPIを追加
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {"status": "ok", "message": "Ramen Backend Service is Running"}
 
