@@ -265,6 +265,24 @@ function CustomerOrderContent() {
     }
   };
 
+  // パラメータ受け取り関数
+  const handleParamsFetched = useCallback((table: number, token: string) => {
+    setTableNumber(table);
+    setSessionToken(token);
+    // トークンが空の場合は即時エラー
+    if (!token) {
+      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
+      return;
+    }
+    // セッション検証
+    api.get(`/orders/session/verify?table_number=${table}&token=${token}`)
+      .catch((err) => {
+        setSessionError(
+          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
+        );
+      });
+  }, []);
+
   // ★ 会計済み／無効なトークンの場合のエラー画面
   if (sessionError) {
     return (
@@ -290,24 +308,6 @@ function CustomerOrderContent() {
   const filteredMenuItems = selectedCategory
     ? menuItems.filter((item) => item.category === selectedCategory)
     : [];
-
-  // パラメータ受け取り関数
-  const handleParamsFetched = useCallback((table: number, token: string) => {
-    setTableNumber(table);
-    setSessionToken(token);
-    // トークンが空の場合は即時エラー
-    if (!token) {
-      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
-      return;
-    }
-    // セッション検証
-    api.get(`/orders/session/verify?table_number=${table}&token=${token}`)
-      .catch((err) => {
-        setSessionError(
-          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
-        );
-      });
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
