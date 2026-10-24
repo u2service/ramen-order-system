@@ -150,6 +150,7 @@ class OrderItemCreateSchema(BaseModel):
 # POST /api/v1/orders のリクエスト本体
 class OrderCreateSchema(BaseModel):
     table_number: int
+    session_token: str
     items: List[OrderItemCreateSchema]
 
 # 注文作成完了のレスポンス

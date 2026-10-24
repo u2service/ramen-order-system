@@ -3,6 +3,8 @@ import zoneinfo
 from sqlalchemy import Column, Integer, String, Boolean, Numeric, Date, DateTime, ForeignKey, func, Index, text
 from sqlalchemy.orm import relationship
 from app.database import Base
+import secrets
+from datetime import datetime
 
 # 日本時間(JST)を取得する共通関数
 def get_jst_now():
@@ -176,3 +178,13 @@ class ProductInventoryItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
     inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), primary_key=True)
     consumed_quantity = Column(Numeric(10, 2), nullable=False) # 例: ラーメン1食で麺 1.0 (玉) や スープ 300.0 (ml)
+
+class TableSession(Base):
+    __tablename__ = "table_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    table_number = Column(Integer, nullable=False, index=True)
+    session_token = Column(String(64), unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=get_jst_now)
+    closed_at = Column(DateTime(timezone=True), nullable=True)

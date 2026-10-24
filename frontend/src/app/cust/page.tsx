@@ -38,18 +38,23 @@ const categoryLabelMap: Record<string, string> = {
 };
 
 // ★ 追加: useSearchParams を使う専用の非表示コンポーネント
-function TableNumberFetcher({ onTableFetched }: { onTableFetched: (table: number) => void }) {
+function TableParamsFetcher({
+  onParamsFetched
+}: {
+  onParamsFetched: (table: number, token: string) => void
+}) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const tableParam = searchParams.get('table');
+    const tokenParam = searchParams.get('token') || '';
     if (tableParam) {
       const parsedTable = parseInt(tableParam, 10);
       if (!isNaN(parsedTable)) {
-        onTableFetched(parsedTable);
+        onParamsFetched(parsedTable, tokenParam);
       }
     }
-  }, [searchParams, onTableFetched]);
+  }, [searchParams, onParamsFetched]);
 
   return null;
 }
@@ -57,6 +62,8 @@ function TableNumberFetcher({ onTableFetched }: { onTableFetched: (table: number
 // 1. 注文画面の実体コンポーネント
 function CustomerOrderContent() {
   const [tableNumber, setTableNumber] = useState<number>(1);
+  const [sessionToken, setSessionToken] = useState<string>('');
+  const [sessionError, setSessionError] = useState<string | null>(null); 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
@@ -233,6 +240,7 @@ function CustomerOrderContent() {
     try {
       const payload = {
         table_number: tableNumber,
+        session_token: sessionToken,
         items: cart.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -257,6 +265,20 @@ function CustomerOrderContent() {
     }
   };
 
+  // ★ 会計済み／無効なトークンの場合のエラー画面
+  if (sessionError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-gray-50">
+        <div className="p-6 bg-white rounded-xl shadow-md max-w-sm">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">ご注文いただけません</h2>
+          <p className="text-sm text-gray-600 mb-4">{sessionError}</p>
+          <p className="text-xs text-gray-400">ご不明な点は店員までお声がけください。</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center text-lg font-bold text-gray-600">
@@ -269,11 +291,29 @@ function CustomerOrderContent() {
     ? menuItems.filter((item) => item.category === selectedCategory)
     : [];
 
+  // パラメータ受け取り関数
+  const handleParamsFetched = useCallback((table: number, token: string) => {
+    setTableNumber(table);
+    setSessionToken(token);
+    // トークンが空の場合は即時エラー
+    if (!token) {
+      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
+      return;
+    }
+    // セッション検証
+    api.get(`/orders/session/verify?table_number=${table}&token=${token}`)
+      .catch((err) => {
+        setSessionError(
+          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
+        );
+      });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
             {/* ★ Suspense で囲んでパラメータ取得コンポーネントを配置 */}
       <Suspense fallback={null}>
-        <TableNumberFetcher onTableFetched={setTableNumber} />
+        <TableParamsFetcher onParamsFetched={handleParamsFetched} />
       </Suspense>
 
       {/* ヘッダー */}

@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from app.events import order_broadcaster
 from app.models import (
     Order, OrderItem, OrderItemOption, Product, Option,
-    OptionInventoryItem, ProductInventoryItem, InventoryLot
+    OptionInventoryItem, ProductInventoryItem, InventoryLot,
+    TableSession
 )
 from app.schemas import OrderCreateSchema
 
@@ -35,6 +36,16 @@ class OrderService:
         注文作成、在庫引当(FIFO)、セット展開、合計金額・原価計算を行い、イベント送信する
         """
         try:
+            # ★ 0. セッションの有効性確認（追加）
+            valid_session = db.query(TableSession).filter(
+                TableSession.table_number == order_in.table_number,
+                TableSession.session_token == order_in.session_token,
+                TableSession.is_active == True
+            ).first()
+
+            if not valid_session:
+                raise OrderServiceError("お会計が完了しているか、無効なQRコードです。注文できません。")
+                
             # 1. 注文ヘッダーの初期作成
             new_order = Order(
                 table_number=order_in.table_number,

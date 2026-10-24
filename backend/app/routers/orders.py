@@ -8,6 +8,8 @@ from app.events import order_broadcaster
 from app.schemas import OrderCreateSchema, OrderCreateResponseSchema
 from app.services.order_service import OrderService, OrderServiceError
 
+from app.models import TableSession
+
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
@@ -65,3 +67,21 @@ async def sse_stream():
             "X-Accel-Buffering": "no",
         }
     )
+
+@router.get("/session/verify")
+def verify_session(table_number: int, token: str, db: Session = Depends(get_db)):
+    """QRコードのセッションが現在有効（未会計）か検証するエンドポイント"""
+    session = db.query(TableSession).filter(
+        TableSession.table_number == table_number,
+        TableSession.session_token == token,
+        TableSession.is_active == True
+    ).first()
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="この卓はお会計済みか、QRコードが無効です。"
+        )
+
+    return {"status": "active", "table_number": table_number}
+    

@@ -1,3 +1,5 @@
+import secrets
+
 from app.auth import require_roles
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -6,7 +8,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.models import Order, OrderItem, OrderItemOption, InventoryLot, OptionInventoryItem
+from app.models import Order, OrderItem, OrderItemOption, InventoryLot, OptionInventoryItem, TableSession
 from app.schemas import (
     TableBillResponseSchema,
     CashCheckoutSchema,
@@ -250,6 +252,15 @@ def checkout_cash(payload: CashCheckoutSchema, db: Session = Depends(get_db)):
         order.paid_at = now
         order.status = "paid"  # 仕様書に合わせて 'paid' に更新
 
+    # ★ 追加: 該当卓のアクティブセッションをすべて終了（無効化）
+    active_sessions = db.query(TableSession).filter(
+        TableSession.table_number == payload.table_number,
+        TableSession.is_active == True
+    ).all()
+    for s in active_sessions:
+        s.is_active = False
+        s.closed_at = now
+
     db.commit()
 
     return CashCheckoutResponseSchema(
@@ -289,6 +300,15 @@ def checkout_stripe(payload: StripeCheckoutSchema, db: Session = Depends(get_db)
         order.paid_at = now
         order.status = "paid"  # 仕様書に合わせて 'paid' に更新
 
+    # ★ 追加: 該当卓のアクティブセッションをすべて終了（無効化）
+    active_sessions = db.query(TableSession).filter(
+        TableSession.table_number == payload.table_number,
+        TableSession.is_active == True
+    ).all()
+    for s in active_sessions:
+        s.is_active = False
+        s.closed_at = now
+
     db.commit()
 
     return StripeCheckoutResponseSchema(
@@ -297,3 +317,26 @@ def checkout_stripe(payload: StripeCheckoutSchema, db: Session = Depends(get_db)
         payment_intent_id=mock_payment_intent_id,
         status="paid"
     )
+
+@router.post("/tables/{table_number}/session")
+def issue_table_session(table_number: int, db: Session = Depends(get_db)):
+    """卓案内時に新しい注文セッショントークンを発行する"""
+    # 既存のアクティブセッションがあれば再利用、なければ新規生成
+    existing = db.query(TableSession).filter(
+        TableSession.table_number == table_number,
+        TableSession.is_active == True
+    ).first()
+
+    if existing:
+        return {"table_number": table_number, "session_token": existing.session_token}
+
+    token = secrets.token_urlsafe(32)
+    new_session = TableSession(
+        table_number=table_number,
+        session_token=token,
+        is_active=True
+    )
+    db.add(new_session)
+    db.commit()
+
+    return {"table_number": table_number, "session_token": token}
