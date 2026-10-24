@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useSyncExternalStore } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getAuthToken, getAuthUser, clearAuth } from '@/lib/auth';
 import { LogOut } from 'lucide-react';
@@ -10,15 +10,17 @@ interface Props {
   allowedRoles: ('admin' | 'cashier' | 'kitchen')[];
 }
 
-const emptySubscribe = () => () => {};
-
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   
-  // マウント判定（ハイドレーションミスマッチ防止）
-  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  // useState + useEffect で初回レンダリング時のHTML一致を保証
+  const [isMounted, setIsMounted] = useState(false);
   const isRedirectingRef = useRef(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isMounted || isRedirectingRef.current) return;
