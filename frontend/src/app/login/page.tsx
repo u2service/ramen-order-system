@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -48,8 +48,8 @@ function LoginForm() {
         const defaultPath = data.allowed_pages[0] || '/admin';
         router.push(defaultPath);
       }
-    } catch (err: any) {
-      setError(err.message || '通信エラーが発生しました');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "通信エラーが発生しました");
     } finally {
       setLoading(false);
     }

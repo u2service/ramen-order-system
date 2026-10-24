@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -26,6 +26,7 @@ export default function RecipeSettingPage() {
 
   // 初期データの取得 (商品・オプション・在庫品目)
   useEffect(() => {
+    let isMounted = true;
     const initData = async () => {
       try {
         setLoading(true);
@@ -35,8 +36,10 @@ export default function RecipeSettingPage() {
           fetch(`${API_BASE_URL}/inventory/items`).catch(() => null),
         ]);
 
+        if (!isMounted) return;
+
         if (prodRes && prodRes.ok) {
-          const prods = await prodRes.json();
+          const prods = await prodRes.json() as Product[];
 
           setProducts(prods);
 
@@ -46,29 +49,35 @@ export default function RecipeSettingPage() {
         }
 
         if (optRes && optRes.ok) {
-          const groups = await optRes.json();
+          const groups = await optRes.json() as { options?: Option[] }[];
           // 各グループの中に入っている選択肢（options）をフラットな1つの配列に展開
-          const allOptions: Option[] = groups.flatMap((group: any) => group.options || []);
+          const allOptions: Option[] = groups.flatMap((group) => group.options || []);
           setOptions(allOptions);
         }
 
         if (itemRes && itemRes.ok) {
-          const items = await itemRes.json();
+          const items = await itemRes.json() as InventoryItem[];
           setInventoryItems(items);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("初期データ取得エラー:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-    initData();
+    void initData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 対象（商品 or オプション）変更時にレシピを取得
   useEffect(() => {
     if (!selectedTargetId) return;
 
+    let isMounted = true;
     const fetchRecipe = async () => {
       try {
         const endpoint = targetType === "product"
@@ -76,21 +85,24 @@ export default function RecipeSettingPage() {
           : `${API_BASE_URL}/inventory/recipes/options/${selectedTargetId}`;
 
         const res = await fetch(endpoint);
-        if (res.ok) {
-          const data = await res.json();
+        if (res.ok && isMounted) {
+          const data = await res.json() as RecipeRow[];
           setRecipeRows(
-            data.map((r: any) => ({
+            data.map((r: RecipeRow) => ({
               inventory_item_id: r.inventory_item_id,
               consumed_quantity: r.consumed_quantity,
             }))
           );
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("レシピ取得エラー:", err);
       }
     };
 
-    fetchRecipe();
+    void fetchRecipe();
+    return () => {
+      isMounted = false;
+    };
   }, [targetType, selectedTargetId]);
 
   // 行の追加
@@ -138,7 +150,7 @@ export default function RecipeSettingPage() {
       } else {
         alert("保存に失敗しました。");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("保存エラー:", err);
       alert("エラーが発生しました。");
     } finally {
@@ -282,7 +294,7 @@ export default function RecipeSettingPage() {
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
-              onClick={handleSave}
+              onClick={() => void handleSave()}
               disabled={saving}
               style={{
                 background: saving ? "#94a3b8" : "#2563eb",

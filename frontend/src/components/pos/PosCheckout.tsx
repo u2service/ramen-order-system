@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -9,6 +9,7 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 interface OrderItemOption {
   id: number;
+  option_name?: string;
   name: string;
   price: number;
 }
@@ -16,6 +17,7 @@ interface OrderItemOption {
 interface OrderItem {
   id: number;
   item_id?: number;
+  order_id?: number;
   product_name: string;
   price: number;
   quantity: number;
@@ -28,6 +30,12 @@ interface Order {
   id: number;
   table_number: number;
   status: string;
+  total_price: number;
+  items: OrderItem[];
+}
+
+interface ApiTableResponse {
+  table_number: number;
   total_price: number;
   items: OrderItem[];
 }
@@ -105,20 +113,20 @@ export default function PosCheckout() {
   const [activeTables, setActiveTables] = useState<number[]>([]);
 
   // ▼ 未会計の卓一覧をバックエンドから取得
-  const fetchActiveTables = async () => {
+  const fetchActiveTables = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/pos/active-tables`);
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { active_tables?: number[] };
         setActiveTables(data.active_tables || []);
       }
     } catch (error) {
       console.error("アクティブ卓の取得に失敗しました", error);
     }
-  };
+  }, []);
 
   // ▼ 1. 卓選択時に未会計伝票を取得
-  const fetchTableOrder = async (tableNum: number) => {
+  const fetchTableOrder = useCallback(async (tableNum: number) => {
     setSelectedTable(tableNum);
     setClientSecret(''); // 卓切り替え時に前回の Stripe 情報をクリア
     try {
@@ -135,14 +143,14 @@ export default function PosCheckout() {
         return;
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as ApiTableResponse;
       
       setCurrentOrder({
         id: data.items[0]?.order_id || 0,
         table_number: data.table_number,
         status: 'pending',
         total_price: data.total_price,
-        items: data.items.map((item: any) => ({
+        items: data.items.map((item) => ({
           ...item,
           id: item.item_id || item.id
         }))
@@ -153,34 +161,41 @@ export default function PosCheckout() {
       console.error("伝票データの取得に失敗しました", error);
       setCurrentOrder(null);
     }
-  };
+  }, []);
 
   // ▼ クレジットカード選択時 または 注文金額変更時に Stripe PaymentIntent を作成
   useEffect(() => {
     if (paymentMethod === 'credit' && currentOrder && currentOrder.total_price > 0) {
-      setIsCreatingIntent(true);
-      fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: currentOrder.total_price }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.clientSecret) {
+      let isMounted = true;
+      const createIntent = async () => {
+        setIsCreatingIntent(true);
+        try {
+          const res = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: currentOrder.total_price }),
+          });
+          const data = (await res.json()) as { clientSecret?: string };
+          if (isMounted && data.clientSecret) {
             setClientSecret(data.clientSecret);
           }
-        })
-        .catch((err) => {
+        } catch (err: unknown) {
           console.error('PaymentIntent 作成失敗:', err);
-        })
-        .finally(() => {
-          setIsCreatingIntent(false);
-        });
+        } finally {
+          if (isMounted) {
+            setIsCreatingIntent(false);
+          }
+        }
+      };
+      void createIntent();
+      return () => {
+        isMounted = false;
+      };
     }
   }, [paymentMethod, currentOrder?.total_price]);
 
   // ▼ 裏で伝票を最新化する関数[cite: 2]
-  const fetchTableOrderSilent = async (tableNum: number) => {
+  const fetchTableOrderSilent = useCallback(async (tableNum: number) => {
     try {
       const res = await fetch(`${API_BASE_URL}/pos/tables/${tableNum}`);
       if (res.status === 404) {
@@ -190,35 +205,38 @@ export default function PosCheckout() {
       }
       if (!res.ok) return;
 
-      const data = await res.json();
+      const data = (await res.json()) as ApiTableResponse;
       setCurrentOrder({
         id: data.items[0]?.order_id || 0,
         table_number: data.table_number,
         status: 'pending',
         total_price: data.total_price,
-        items: data.items.map((item: any) => ({
+        items: data.items.map((item) => ({
           ...item,
           id: item.item_id || item.id
         }))
       });
-    } catch (error) {
+    } catch {
       // 自動更新時のエラーは静かにスルー[cite: 2]
     }
-  };
+  }, [fetchActiveTables]);
 
   // ▼ SSE接続および初期データの取得
   useEffect(() => {
-    // 1. 初回の未会計卓一覧を取得
-    fetchActiveTables();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchActiveTables();
+      }
+    };
+    void load();
 
     // 2. SSE接続の確立
     const eventSource = new EventSource(`${API_BASE_URL}/orders/events/stream`);
 
     // サーバーからメッセージを受信した際の処理
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = () => {
       try {
-        const data = JSON.parse(event.data);
-        
         // 未会計卓一覧の自動更新
         fetchActiveTables();
 
@@ -232,7 +250,7 @@ export default function PosCheckout() {
     };
 
     // カスタムイベント（例: order_updated）を受信する場合の例
-    eventSource.addEventListener('order_update', (event) => {
+    eventSource.addEventListener('order_update', () => {
       fetchActiveTables();
       if (selectedTable !== null) {
         fetchTableOrderSilent(selectedTable);
@@ -241,14 +259,14 @@ export default function PosCheckout() {
 
     eventSource.onerror = (error) => {
       console.error("SSE接続エラーが発生しました:", error);
-      // EventSourceは自動的に再接続を試みますが、必要に応じてクローズ処理等を行います
     };
 
     // クリーンアップ（コンポーネントのアンマウント時・卓変更時に切断）
     return () => {
+      isMounted = false;
       eventSource.close();
     };
-  }, [selectedTable]);
+  }, [selectedTable, fetchActiveTables, fetchTableOrderSilent]);
 
   // 2. 商品個別の取り消し処理[cite: 2]
   const handleCancelItem = async (itemId: number, reason: 'customer_mistake' | 'kitchen_error' | 'out_of_stock') => {
@@ -263,7 +281,7 @@ export default function PosCheckout() {
         fetchTableOrder(currentOrder.table_number);
         fetchActiveTables();
       } else {
-        const err = await res.json();
+        const err = await res.json() as { detail?: string };
         alert(`取消エラー: ${err.detail}`);
       }
     } catch (error) {
@@ -286,7 +304,7 @@ export default function PosCheckout() {
       if (res.ok) {
         fetchTableOrder(currentOrder.table_number);
       } else {
-        const err = await res.json();
+        const err = await res.json() as { detail?: string };
         alert(`サービス適用エラー: ${err.detail}`);
       }
     } catch (error) {
@@ -314,12 +332,12 @@ export default function PosCheckout() {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData = await res.json() as { detail?: string };
         alert(`会計エラー: ${errorData.detail || '精算処理に失敗しました'}`);
         return;
       }
 
-      const data = await res.json();
+      const data = await res.json() as { change_amount: number };
       alert(`お会計が完了しました！\nお釣り: ¥${data.change_amount.toLocaleString()}`);
 
       clearCheckoutState();
@@ -328,6 +346,15 @@ export default function PosCheckout() {
       alert('サーバーとの通信に失敗しました。');
     }
   };
+
+  // 会計完了後の共通クリア処理[cite: 2]
+  const clearCheckoutState = useCallback(() => {
+    setCurrentOrder(null);
+    setSelectedTable(null);
+    setPaidAmount(0);
+    setClientSecret('');
+    fetchActiveTables();
+  }, [fetchActiveTables]);
 
   // 5. 精算完了処理 (クレジットカード)
   const handleCreditCheckoutSuccess = async () => {
@@ -358,15 +385,6 @@ export default function PosCheckout() {
       alert('クレジットカードでの決済は完了しましたが、ステータス更新に失敗しました。');
       clearCheckoutState();
     }
-  };
-
-  // 会計完了後の共通クリア処理[cite: 2]
-  const clearCheckoutState = () => {
-    setCurrentOrder(null);
-    setSelectedTable(null);
-    setPaidAmount(0);
-    setClientSecret('');
-    fetchActiveTables();
   };
 
   return (
@@ -421,8 +439,8 @@ export default function PosCheckout() {
 
               {/* 明細リスト[cite: 2] */}
               <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {currentOrder.items.map((item: any, index: number) => {
-                  const optionsTotal = item.options?.reduce((sum: number, opt: any) => sum + (opt.price || 0), 0) || 0;
+                {currentOrder.items.map((item, index) => {
+                  const optionsTotal = item.options?.reduce((sum, opt) => sum + (opt.price || 0), 0) || 0;
                   const baseUnitPrice = Math.max(0, item.price - item.discount_amount);
                   const subtotal = (baseUnitPrice + optionsTotal) * item.quantity;
 
@@ -435,14 +453,14 @@ export default function PosCheckout() {
 
                         {item.options && item.options.length > 0 && (
                           <div className="text-sm text-gray-500">
-                            {item.options.map((o: any) => o.option_name || o.name).join(', ')}
+                            {item.options.map((o) => o.option_name || o.name).join(', ')}
                           </div>
                         )}
 
                         <div>
                           {item.options && item.options.length > 0 && (
                             <ul className="mt-2 pl-3 text-sm text-gray-600 space-y-0.5 border-l-2 border-orange-300 bg-gray-50 p-2 rounded">
-                              {item.options.map((opt: any, optIdx: number) => (
+                              {item.options.map((opt, optIdx) => (
                                 <li key={optIdx} className="flex justify-between items-center text-xs">
                                   <span>・{opt.option_name || opt.name}</span>
                                   {opt.price > 0 && (

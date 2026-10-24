@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; // react-calendar の基本スタイル
-import { Order, OrderStatus, ItemStatus } from '@/types';
+import { Order, OrderStatus, ItemStatus, OrderItemOption } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -49,7 +49,7 @@ export default function OrderHistoryPage() {
       // 全注文を取得して日付を収集 (バックエンドに専用エンドポイントがある場合はそちらを呼び出します)
       const response = await fetch(`${API_BASE_URL}/admin/orders`);
       if (response.ok) {
-        const allOrders: Order[] = await response.json();
+        const allOrders = (await response.json()) as Order[];
         // 注文データの created_at から YYYY-MM-DD を抽出して重複を除去
         const dates = Array.from(
           new Set(
@@ -67,10 +67,10 @@ export default function OrderHistoryPage() {
 
   // 2. 選択された日付の注文データを取得
   const fetchOrdersByDate = useCallback(
-    async (isManualRefresh = false) => {
+    async (isManualRefresh = false, shouldShowLoading = false) => {
       if (isManualRefresh) {
         setIsRefreshing(true);
-      } else {
+      } else if (shouldShowLoading) {
         setLoading(true);
       }
       setError(null);
@@ -84,7 +84,7 @@ export default function OrderHistoryPage() {
         if (!response.ok) {
           throw new Error('注文履歴の取得に失敗しました');
         }
-        const data: Order[] = await response.json();
+        const data = (await response.json()) as Order[];
         setOrders(data);
       } catch (err) {
         setError(
@@ -100,12 +100,30 @@ export default function OrderHistoryPage() {
 
   // 初回ロード時に日付一覧を取得
   useEffect(() => {
-    fetchAllOrderDates();
+    let isMounted = true;
+    const loadDates = async () => {
+      if (isMounted) {
+        await fetchAllOrderDates();
+      }
+    };
+    void loadDates();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchAllOrderDates]);
 
   // 選択日付が変更されたら該当日の注文を取得
   useEffect(() => {
-    fetchOrdersByDate();
+    let isMounted = true;
+    const loadOrders = async () => {
+      if (isMounted) {
+        await fetchOrdersByDate(false, false);
+      }
+    };
+    void loadOrders();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchOrdersByDate]);
 
   // カレンダーの日付マスに付与する CSS クラス判定
@@ -192,7 +210,7 @@ export default function OrderHistoryPage() {
           <button
             onClick={() => {
               fetchAllOrderDates();
-              fetchOrdersByDate(true);
+              fetchOrdersByDate(true, false);
             }}
             disabled={isRefreshing}
             className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-3.5 py-2 rounded-lg transition-colors duration-200 shadow-sm disabled:bg-blue-300"
@@ -270,51 +288,46 @@ export default function OrderHistoryPage() {
                 {/* 注文明細リスト */}
                 <div className="p-4">
                   <ul className="divide-y divide-gray-100">
-                    {order.items.map((item) => {
-                      // ブラウザのデベロッパーツール（F12 -> Console）に表示されます
-                      console.log('OrderItem item data:', item);
+                    {order.items.map((item) => (
+                      <li key={item.id} className="py-2.5 flex items-start justify-between first:pt-0 last:pb-0">
+                        <div className="space-y-1">
+                          <div className="text-base font-semibold text-gray-800">
+                            {item.menu_item_name}
 
-                      return (
-                        <li key={item.id} className="py-2.5 flex items-start justify-between first:pt-0 last:pb-0">
-                          <div className="space-y-1">
-                            <div className="text-base font-semibold text-gray-800">
-                              {item.menu_item_name}
-
-                              <span className="ml-2 text-xs text-gray-500 font-normal">
-                                (売: ¥{item.price?.toLocaleString()} / 原: ¥{item.cost_price?.toLocaleString()})
-                              </span>
-                              <span className="ml-2 text-sm font-bold text-blue-600">× {item.quantity}</span>
-                            </div>
-
-                            {item.options && item.options.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                {item.options.map((opt: any, idx: number) => {
-                                  const optionName =
-                                    typeof opt === 'object' && opt !== null ? opt.name || opt.id : String(opt);
-
-                                  return (
-                                    <span
-                                      key={idx}
-                                      className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded border border-gray-200"
-                                    >
-                                      {optionName}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
+                            <span className="ml-2 text-xs text-gray-500 font-normal">
+                              (売: ¥{item.price?.toLocaleString()} / 原: ¥{item.cost_price?.toLocaleString()})
+                            </span>
+                            <span className="ml-2 text-sm font-bold text-blue-600">× {item.quantity}</span>
                           </div>
 
-                          <span
-                            className={`text-xs px-2.5 py-1 font-medium border rounded-md whitespace-nowrap ${
-                              ITEM_STATUS_LABELS[item.status]?.style || 'text-gray-500 border-gray-200'
-                            }`}
-                          >
-                            {ITEM_STATUS_LABELS[item.status]?.label || item.status}
-                          </span>
-                        </li>
-                      );
-                    })}
+                          {item.options && item.options.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {item.options.map((opt: OrderItemOption, idx: number) => {
+                                const optionName =
+                                  typeof opt === 'object' && opt !== null ? opt.name || opt.id : String(opt);
+
+                                return (
+                                  <span
+                                    key={idx}
+                                    className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded border border-gray-200"
+                                  >
+                                    {optionName}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        <span
+                          className={`text-xs px-2.5 py-1 font-medium border rounded-md whitespace-nowrap ${
+                            ITEM_STATUS_LABELS[item.status]?.style || 'text-gray-500 border-gray-200'
+                          }`}
+                        >
+                          {ITEM_STATUS_LABELS[item.status]?.label || item.status}
+                        </span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -326,13 +339,13 @@ export default function OrderHistoryPage() {
       {/* 注文が存在する日の背景色カスタマイズCSS */}
       <style jsx global>{`
         .react-calendar__tile.has-order-tile {
-          background-color: #dbeafe !important; /* 薄い青色 (Tailwind: bg-blue-100) */
-          color: #1e40af !important; /* 青字 (Tailwind: text-blue-800) */
+          background-color: #dbeafe !important;
+          color: #1e40af !important;
           font-weight: bold;
           border-radius: 6px;
         }
         .react-calendar__tile.has-order-tile:hover {
-          background-color: #bfdbfe !important; /* ホバー時の青色 (Tailwind: bg-blue-200) */
+          background-color: #bfdbfe !important;
         }
       `}</style>
     </div>

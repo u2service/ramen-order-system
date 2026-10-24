@@ -1,7 +1,7 @@
 // src/components/OptionSelectModal.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, ChevronRight, Check, ArrowLeft, Plus, Minus } from 'lucide-react';
 
 export type Option = {
@@ -40,12 +40,13 @@ export default function OptionSelectModal({
   initialSelectedOptions = [],
   initialQuantity = 1,
 }: Props) {
-  const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
-  const [activeGroup, setActiveGroup] = useState<OptionGroup | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
 
   // オプション（カスタマイズ項目）が存在するかどうかの判定
   const hasOptions = optionGroups && optionGroups.length > 0;
+
+  const [selectedOptions, setSelectedOptions] = useState<Option[]>(() => initialSelectedOptions || []);
+  const [activeGroup, setActiveGroup] = useState<OptionGroup | null>(null);
+  const [quantity, setQuantity] = useState<number>(hasOptions ? 1 : initialQuantity || 1);
 
   // ★ 追加: ねぎ増しが選択されているかどうかの判定
   const isNegiSelected = selectedOptions.some((opt) =>
@@ -61,15 +62,6 @@ export default function OptionSelectModal({
   const isAjitamaSelected = selectedOptions.some((opt) =>
     opt.name.includes('味玉')
   );
-
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedOptions(initialSelectedOptions || []);
-      setActiveGroup(null);
-      // オプションがある場合は常に「1」、ない場合のみ受け取った数量（または1）をセット
-      setQuantity(hasOptions ? 1 : initialQuantity || 1);
-    }
-  }, [isOpen, initialQuantity, hasOptions]);
 
   if (!isOpen) return null;
 

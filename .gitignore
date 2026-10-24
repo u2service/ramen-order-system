@@ -52,3 +52,6 @@ frontend/.vercel/
 
 # typescript
 frontend/*.tsbuildinfo
+
+playwright-report/
+test-results/

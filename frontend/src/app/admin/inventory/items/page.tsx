@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 
@@ -30,7 +30,7 @@ export default function InventoryItemsPage() {
         const data = await res.json();
         setItems(data);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("品目マスタ取得エラー:", error);
     } finally {
       if (!isSilent) setLoading(false);
@@ -39,8 +39,14 @@ export default function InventoryItemsPage() {
 
   // ポーリング & SSE 処理（isAutoRefresh の切り替えで適切にオン/オフ）
   useEffect(() => {
-    // 初回表示またはフラグ変更時に1回最新化
-    fetchItems();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+
+        await fetchItems();
+      }
+    };
+    void load();
 
     // OFF の場合はタイマーやSSEを起動しない
     if (!isAutoRefresh) return;
@@ -48,7 +54,7 @@ export default function InventoryItemsPage() {
     // 1. ポーリング（3秒ごとにサイレント取得）
     const interval = setInterval(() => {
       if (!document.hidden) {
-        fetchItems(true);
+        void fetchItems(true);
       }
     }, 3000);
 
@@ -58,7 +64,7 @@ export default function InventoryItemsPage() {
 
     const handleInventoryUpdate = (event?: MessageEvent) => {
       if (event?.data) console.log("在庫更新イベント受信:", event.data);
-      fetchItems(true);
+      void fetchItems(true);
     };
 
     eventSource.addEventListener("inventory_updated", handleInventoryUpdate);
@@ -67,11 +73,11 @@ export default function InventoryItemsPage() {
     eventSource.onmessage = (event) => {
       if (!event.data) return;
       try {
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data) as { event?: string };
         if (data.event === "inventory_updated" || data.event === "new_order") {
           handleInventoryUpdate();
         }
-      } catch (e) {
+      } catch (e: unknown) {
         // JSON解析エラーは無視
       }
     };
@@ -84,6 +90,7 @@ export default function InventoryItemsPage() {
 
     // クリーンアップ処理：isAutoRefresh が false になった時や画面破棄時に確実に停止・切断する
     return () => {
+      isMounted = false;
       clearInterval(interval);
       eventSource.removeEventListener("inventory_updated", handleInventoryUpdate);
       eventSource.removeEventListener("new_order", handleInventoryUpdate);
@@ -127,7 +134,7 @@ export default function InventoryItemsPage() {
         if (res.ok) await fetchItems();
       }
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("保存失敗:", error);
     }
   };
@@ -141,7 +148,7 @@ export default function InventoryItemsPage() {
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           {/* 手動更新ボタン */}
           <button 
-            onClick={() => fetchItems()} 
+            onClick={() => void fetchItems()} 
             style={{
               backgroundColor: "#f1f5f9",
               border: "1px solid #cbd5e1",
@@ -263,7 +270,7 @@ export default function InventoryItemsPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
               <button onClick={() => setIsModalOpen(false)} style={{ background: "#f1f5f9", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#475569" }}>キャンセル</button>
-              <button onClick={handleSave} style={{ background: "#2563eb", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#fff", fontWeight: "600" }}>保存</button>
+              <button onClick={() => void handleSave()} style={{ background: "#2563eb", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#fff", fontWeight: "600" }}>保存</button>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { CartItem } from '@/types';
@@ -37,9 +37,6 @@ const categoryLabelMap: Record<string, string> = {
   // 'ドリンク': 'ドリンクメニュー',
 };
 
-// 画像が設定されていない場合や読み込めない場合の予備画像
-const defaultCategoryImage = '/images/default.jpg';
-
 // ★ 追加: useSearchParams を使う専用の非表示コンポーネント
 function TableNumberFetcher({ onTableFetched }: { onTableFetched: (table: number) => void }) {
   const searchParams = useSearchParams();
@@ -74,14 +71,16 @@ function CustomerOrderContent() {
   const [initialQuantityForModal, setInitialQuantityForModal] = useState<number>(1);
 
   // メニュー一覧の取得
-  const fetchMenu = async (isInitial = false) => {
+  const fetchMenu = useCallback(async () => {
     try {
       const res = await api.get('/menu');
       let items: MenuItem[] = [];
 
       if (res.data && Array.isArray(res.data.categories)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         items = res.data.categories.flatMap((cat: any) => {
           const products = cat.products || cat.items || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return products.map((prod: any) => ({
             id: prod.id,
             name: prod.name,
@@ -91,11 +90,13 @@ function CustomerOrderContent() {
             sort_order: prod.sort_order ?? 0,
             is_available: !prod.is_sold_out,
             image_url: prod.image_url || prod.image || null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             option_groups: (prod.option_groups || []).map((grp: any) => ({
               id: grp.id,
               name: grp.name,
               is_required: grp.is_required ?? false,
               is_multiple_choice: grp.is_multiple_choice ?? false,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               options: (grp.options || []).map((opt: any) => ({
                 id: opt.id,
                 option_group_id: grp.id,
@@ -116,15 +117,28 @@ function CustomerOrderContent() {
     } catch (err) {
       console.error('メニューの取得に失敗しました:', err);
     } finally {
-      setLoading(false); // isInitial の条件を外し、初回の試行が終わったら必ず解除する
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchMenu(true);
-    const intervalId = setInterval(() => fetchMenu(false), 5000);
-    return () => clearInterval(intervalId);
-  }, []);
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchMenu();
+      }
+    };
+    void load();
+
+    const intervalId = setInterval(() => {
+      void fetchMenu();
+    }, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [fetchMenu]);
 
   const categories = Array.from(new Set(menuItems.map((item) => item.category)));
 
@@ -232,10 +246,12 @@ function CustomerOrderContent() {
       setOrderSuccess(true);
       setSelectedCategory(null);
       setTimeout(() => setOrderSuccess(false), 5000);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorObj = err as any;
       const errorMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
+        errorObj.response?.data?.detail ||
+        errorObj.response?.data?.message ||
         '注文に失敗しました。もう一度お試しください。';
       alert(errorMessage);
     }

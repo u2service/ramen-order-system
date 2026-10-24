@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, ChangeEvent } from "react";
 import { Category } from "@/types";
@@ -24,16 +24,26 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(false);
 
   const loadCategories = async () => {
-    try {
-      const data = await fetchCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error(error);
-    }
+    const data = await fetchCategories();
+    setCategories(data);
   };
 
   useEffect(() => {
-    loadCategories();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const data = await fetchCategories();
+        if (isMounted) {
+          setCategories(data);
+        }
+      } catch (error: unknown) {
+        console.error(error);
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // フォームのリセット処理
@@ -49,7 +59,7 @@ export default function AdminCategoriesPage() {
     setEditingId(category.id);
     setName(category.name);
     setSortOrder(category.sort_order ?? 0);
-    setImageUrl((category as any).image_url || "");
+    setImageUrl(category.image_url || "");
   };
 
   // 画像選択時のアップロード処理（商品登録と同一処理）
@@ -61,7 +71,7 @@ export default function AdminCategoriesPage() {
       setUploading(true);
       const url = await uploadImage(file);
       setImageUrl(url);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("画像のアップロードに失敗しました:", error);
       alert("画像のアップロードに失敗しました");
     } finally {
@@ -92,7 +102,7 @@ export default function AdminCategoriesPage() {
 
       resetForm();
       await loadCategories();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       alert(editingId ? "カテゴリの更新に失敗しました" : "カテゴリの登録に失敗しました");
     } finally {
@@ -107,7 +117,7 @@ export default function AdminCategoriesPage() {
       await deleteCategory(id);
       if (editingId === id) resetForm();
       await loadCategories();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       alert("削除に失敗しました");
     }
@@ -308,9 +318,9 @@ export default function AdminCategoriesPage() {
               <tr key={cat.id} style={{ borderBottom: "1px solid #edf2f7", background: editingId === cat.id ? "#f0f9ff" : "transparent" }}>
                 <td style={{ padding: "0.75rem" }}>{cat.id}</td>
                 <td style={{ padding: "0.5rem 0.75rem" }}>
-                  {(cat as any).image_url ? (
+                  {cat.image_url ? (
                     <img
-                      src={getImageUrl((cat as any).image_url)}
+                      src={getImageUrl(cat.image_url)}
                       alt={cat.name}
                       style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
                     />

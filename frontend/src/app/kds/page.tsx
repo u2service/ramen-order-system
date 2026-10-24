@@ -1,7 +1,7 @@
 "use client";
 
 import ProtectedRoute from '@/components/ProtectedRoute';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -18,6 +18,24 @@ interface OrderItem {
   created_at: string;
 }
 
+interface ApiOrderItem {
+  id?: number | string;
+  menu_item_name?: string;
+  product_name?: string;
+  name?: string;
+  quantity?: number;
+  options?: string[];
+  status?: "pending" | "cooking" | "served" | "completed";
+}
+
+interface ApiOrder {
+  id: number;
+  table_number: number;
+  status?: "pending" | "cooking" | "served" | "completed";
+  items?: ApiOrderItem[];
+  created_at: string;
+}
+
 export default function KDSStreamPage() {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [filter, setFilter] = useState<"all" | "noodle" | "side">("all");
@@ -25,17 +43,17 @@ export default function KDSStreamPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // バックエンドからのデータ取得関数
-  const fetchKdsOrders = async () => {
+  const fetchKdsOrders = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/kds/orders`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const orders = await res.json();
+      const orders: ApiOrder[] = await res.json();
       const flatItems: OrderItem[] = [];
 
-      orders.forEach((order: any) => {
+      orders.forEach((order) => {
         // served（提供完了）および completed 以外のステータスを表示対象とする
         if (order.items && Array.isArray(order.items)) {
-          order.items.forEach((item: any) => {
+          order.items.forEach((item) => {
             // item.status が served / completed のものは一覧に追加しない（除外する）
             const itemStatus = item.status || order.status || "pending";
             if (itemStatus !== "served" && itemStatus !== "completed") {
@@ -75,11 +93,17 @@ export default function KDSStreamPage() {
       // ★ 通信完了時にローディングを終了
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // 初回データ取得
-    fetchKdsOrders();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchKdsOrders();
+      }
+    };
+    void load();
 
     // SSE（Server-Sent Events）接続の確立
     const eventSource = new EventSource(`${API_BASE_URL}/orders/events/stream`);
@@ -107,9 +131,10 @@ export default function KDSStreamPage() {
 
     // クリーンアップ処理（画面を離れたら切断）
     return () => {
+      isMounted = false;
       eventSource.close();
     };
-  }, []);
+  }, [fetchKdsOrders]);
 
   // 経過時間（分）の計算関数
   const getElapsedMinutes = (createdAtStr: string) => {
@@ -131,7 +156,7 @@ export default function KDSStreamPage() {
       // 調理開始などその他のステータス変更の場合はステータスのみ更新
       setItems((prev) =>
         prev.map((item) =>
-          item.id === itemId ? { ...item, status: newStatus as any } : item
+          item.id === itemId ? { ...item, status: newStatus as OrderItem["status"] } : item
         )
       );
     }

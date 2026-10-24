@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 
@@ -51,15 +51,15 @@ export default function InventoryLotsPage() {
       ]);
 
       if (itemsRes.ok && lotsRes.ok) {
-        const itemsData = await itemsRes.json();
-        const lotsData = await lotsRes.json();
+        const itemsData = await itemsRes.json() as InventoryItem[];
+        const lotsData = await lotsRes.json() as InventoryLot[];
         setItems(itemsData);
         setLots(lotsData);
         if (itemsData.length > 0 && selectedItemId === 0) {
           setSelectedItemId(itemsData[0].id);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("データ取得エラー:", error);
     } finally {
       setLoading(false);
@@ -67,7 +67,17 @@ export default function InventoryLotsPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+
+        await fetchData();
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const currentSelectedItem = useMemo(
@@ -133,7 +143,7 @@ export default function InventoryLotsPage() {
       } else {
         console.error("ロット保存失敗:", await res.text());
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("ロット保存エラー:", error);
     }
   };
@@ -154,7 +164,7 @@ export default function InventoryLotsPage() {
       } else {
         console.error("ロット廃棄失敗:", await res.text());
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("ロット廃棄エラー:", error);
     }
   };
@@ -243,7 +253,7 @@ export default function InventoryLotsPage() {
                             編集
                           </button>
                           <button
-                            onClick={() => handleDeleteLot(lot.id)}
+                            onClick={() => void handleDeleteLot(lot.id)}
                             style={{ background: "#fef2f2", border: "1px solid #fecaca", padding: "0.3rem 0.6rem", borderRadius: "4px", cursor: "pointer", fontSize: "0.8rem", color: "#dc2626", fontWeight: "600" }}
                           >
                             廃棄
@@ -305,7 +315,7 @@ export default function InventoryLotsPage() {
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
               <button onClick={() => setIsModalOpen(false)} style={{ background: "#f1f5f9", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#475569" }}>キャンセル</button>
-              <button onClick={handleSaveLot} style={{ background: "#2563eb", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#fff", fontWeight: "600" }}>
+              <button onClick={() => void handleSaveLot()} style={{ background: "#2563eb", border: "none", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", color: "#fff", fontWeight: "600" }}>
                 {editingLot ? "更新" : "登録"}
               </button>
             </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import ProductOptionMapping from '@/components/ProductOptionMapping';
@@ -70,7 +70,7 @@ export default function OptionManagementPage() {
           setSelectedGroup(data[0]);
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch option groups:', error);
     }
   };
@@ -82,14 +82,24 @@ export default function OptionManagementPage() {
         const data: Product[] = await res.json();
         setProducts(data);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to fetch products:', error);
     }
   };
 
   useEffect(() => {
-    fetchGroups();
-    fetchProducts();
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchGroups();
+        await fetchProducts();
+      }
+
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // --- グループ用モーダル制御 ---
@@ -129,11 +139,11 @@ export default function OptionManagementPage() {
         setIsGroupModalOpen(false);
         setEditingGroupId(null);
         setGroupForm({ name: '', is_required: false, is_multiple_choice: false });
-        fetchGroups();
+        await fetchGroups();
       } else {
         console.error('Save failed:', await res.json());
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Network error:', error);
     }
   };
@@ -143,7 +153,7 @@ export default function OptionManagementPage() {
     const res = await fetch(`${API_BASE_URL}/admin/option-groups/${groupId}`, { method: 'DELETE' });
     if (res.ok) {
       setSelectedGroup(null);
-      fetchGroups();
+      await fetchGroups();
     }
   };
 
@@ -190,11 +200,11 @@ export default function OptionManagementPage() {
         setIsOptionModalOpen(false);
         setEditingOptionId(null);
         setOptionForm({ name: '', price: 0, linked_product_id: null });
-        fetchGroups();
+        await fetchGroups();
       } else {
         console.error('Save option failed:', await res.json());
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Network error:', error);
     }
   };
@@ -203,7 +213,7 @@ export default function OptionManagementPage() {
     if (!confirm('この選択肢を削除しますか？')) return;
     const res = await fetch(`${API_BASE_URL}/admin/options/${optionId}`, { method: 'DELETE' });
     if (res.ok) {
-      fetchGroups();
+      await fetchGroups();
     }
   };
 
@@ -218,9 +228,9 @@ export default function OptionManagementPage() {
         }),
       });
       if (res.ok) {
-        fetchGroups();
+        await fetchGroups();
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to toggle option status:', error);
     }
   };
@@ -279,7 +289,7 @@ export default function OptionManagementPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteGroup(group.id);
+                          void handleDeleteGroup(group.id);
                         }}
                         className="text-red-500 hover:text-red-700 text-xs px-2 py-1"
                       >
@@ -368,7 +378,7 @@ export default function OptionManagementPage() {
                               </button>
                               {/* 有効 / 無効 切り替えボタン */}
                               <button
-                                onClick={() => handleToggleOptionStatus(opt)}
+                                onClick={() => void handleToggleOptionStatus(opt)}
                                 className={`text-xs font-medium ${
                                   opt.is_active ? 'text-amber-600 hover:text-amber-800' : 'text-green-600 hover:text-green-800'
                                 }`}
@@ -378,7 +388,7 @@ export default function OptionManagementPage() {
 
                               {/* 3. 削除ボタン (復活) */}
                               <button
-                                onClick={() => handleDeleteOption(opt.id)}
+                                onClick={() => void handleDeleteOption(opt.id)}
                                 className="text-red-500 hover:text-red-700 text-xs font-medium"
                               >
                                 削除
@@ -469,7 +479,7 @@ export default function OptionManagementPage() {
                 キャンセル
               </button>
               <button
-                onClick={handleSaveGroup}
+                onClick={() => void handleSaveGroup()}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded font-medium hover:bg-blue-700"
               >
                 保存
@@ -539,7 +549,7 @@ export default function OptionManagementPage() {
                 キャンセル
               </button>
               <button
-                onClick={handleSaveOption}
+                onClick={() => void handleSaveOption()}
                 className="px-4 py-2 text-sm bg-green-600 text-white rounded font-medium hover:bg-green-700"
               >
                 保存

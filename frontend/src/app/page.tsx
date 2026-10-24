@@ -17,6 +17,38 @@ type MenuItem = {
   option_groups: OptionGroup[];
 };
 
+// APIレスポンス用の型定義
+type ApiOption = {
+  id: number;
+  name: string;
+  price_delta?: number;
+  price?: number;
+};
+
+type ApiOptionGroup = {
+  id: number;
+  name: string;
+  is_required?: boolean;
+  is_multiple_choice?: boolean;
+  options?: ApiOption[];
+};
+
+type ApiProduct = {
+  id: number;
+  name: string;
+  price?: number;
+  base_price?: number;
+  sort_order?: number;
+  is_sold_out?: boolean;
+  option_groups?: ApiOptionGroup[];
+};
+
+type ApiCategory = {
+  name: string;
+  products?: ApiProduct[];
+  items?: ApiProduct[];
+};
+
 export default function OrderPage() {
   const [tableNumber, setTableNumber] = useState<number>(1);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -40,16 +72,17 @@ export default function OrderPage() {
       const res = await api.get('/menu');
       let items: MenuItem[] = [];
 
-      if (res.data && Array.isArray(res.data.categories)) {
-        items = res.data.categories.flatMap((cat: any) => {
+      if (res.data && Array.isArray((res.data as { categories?: ApiCategory[] }).categories)) {
+        const categories = (res.data as { categories: ApiCategory[] }).categories;
+        items = categories.flatMap((cat) => {
           const products = cat.products || cat.items || [];
-          return products.map((prod: any) => {
-            const optionGroups: OptionGroup[] = (prod.option_groups || []).map((grp: any) => ({
+          return products.map((prod) => {
+            const optionGroups: OptionGroup[] = (prod.option_groups || []).map((grp) => ({
               id: grp.id,
               name: grp.name,
               is_required: grp.is_required ?? false,
               is_multiple_choice: grp.is_multiple_choice ?? false,
-              options: (grp.options || []).map((opt: any) => ({
+              options: (grp.options || []).map((opt) => ({
                 id: opt.id,
                 option_group_id: grp.id,
                 name: opt.name,
@@ -78,7 +111,7 @@ export default function OrderPage() {
       });
 
       setMenuItems(items);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('メニューの取得に失敗しました:', err);
     } finally {
       if (isInitial) {
@@ -88,9 +121,22 @@ export default function OrderPage() {
   };
 
   useEffect(() => {
-    fetchMenu(true);
-    const intervalId = setInterval(() => fetchMenu(false), 3000);
-    return () => clearInterval(intervalId);
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await fetchMenu(true);
+      }
+    };
+    void load();
+
+    const intervalId = setInterval(() => {
+      void fetchMenu(false);
+    }, 3000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, []);
 
   // 新規商品タップ時
@@ -220,13 +266,14 @@ export default function OrderPage() {
       setIsCartModalOpen(false);
       setOrderSuccess(true);
       setTimeout(() => setOrderSuccess(false), 4000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('注文の送信に失敗しました:', err);
       
       // ★ サーバーから返ってきた具体エラー（detail）があればそれを表示
+      const errorResponse = err as { response?: { data?: { detail?: string; message?: string } } };
       const errorMessage =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
+        errorResponse.response?.data?.detail ||
+        errorResponse.response?.data?.message ||
 
         '注文に失敗しました。もう一度お試しください。';
 

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useCallback } from "react";
 import { Category, Product } from "@/types";
 import {
   fetchCategories,
@@ -31,22 +31,36 @@ export default function AdminProductsPage() {
   
   const [loading, setLoading] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [cats, prods] = await Promise.all([fetchCategories(), fetchProducts()]);
       setCategories(cats);
       setProducts(prods);
-      if (cats.length > 0 && categoryId === 0) {
-        setCategoryId(cats[0].id);
-      }
+      setCategoryId((prevCategoryId) => {
+
+        if (cats.length > 0 && prevCategoryId === 0) {
+          return cats[0].id;
+        }
+        return prevCategoryId;
+      });
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let isMounted = true;
+    const load = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [loadData]);
+
 
   // フォームのリセット処理
   const resetForm = () => {
