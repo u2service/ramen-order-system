@@ -37,30 +37,9 @@ const categoryLabelMap: Record<string, string> = {
   // 'ドリンク': 'ドリンクメニュー',
 };
 
-// ★ 追加: useSearchParams を使う専用の非表示コンポーネント
-function TableParamsFetcher({
-  onParamsFetched
-}: {
-  onParamsFetched: (table: number, token: string) => void
-}) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const tableParam = searchParams.get('table');
-    const tokenParam = searchParams.get('token') || '';
-    if (tableParam) {
-      const parsedTable = parseInt(tableParam, 10);
-      if (!isNaN(parsedTable)) {
-        onParamsFetched(parsedTable, tokenParam);
-      }
-    }
-  }, [searchParams, onParamsFetched]);
-
-  return null;
-}
-
 // 1. 注文画面の実体コンポーネント
 function CustomerOrderContent() {
+  const searchParams = useSearchParams(); // ★ 直接取得
   const [tableNumber, setTableNumber] = useState<number>(1);
   const [sessionToken, setSessionToken] = useState<string>('');
   const [sessionError, setSessionError] = useState<string | null>(null); 
@@ -128,24 +107,45 @@ function CustomerOrderContent() {
     }
   }, []);
 
+  // ★ 追加: 画面起動時にまずセッションを検証し、有効ならメニューを取得する
   useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      if (isMounted) {
-        await fetchMenu();
-      }
-    };
-    void load();
+    const tableParam = searchParams.get('table');
+    const tokenParam = searchParams.get('token');
+
+    if (!tableParam || !tokenParam) {
+      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
+      setLoading(false);
+      return;
+    }
+
+    const parsedTable = parseInt(tableParam, 10);
+    setTableNumber(parsedTable);
+    setSessionToken(tokenParam);
+
+    // バックエンドでセッション有効性を検証
+    api.get(`/orders/session/verify?table_number=${parsedTable}&token=${tokenParam}`)
+      .then(() => {
+        // セッションが有効であればメニューを読み込む
+        fetchMenu();
+      })
+      .catch((err) => {
+        // 会計済みまたは無効ならエラー画面に切り替える
+        setSessionError(
+          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
+        );
+        setLoading(false);
+      });
+  }, [searchParams, fetchMenu]);
+
+  useEffect(() => {
+    if (sessionError) return;
 
     const intervalId = setInterval(() => {
       void fetchMenu();
     }, 5000);
 
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, [fetchMenu]);
+    return () => clearInterval(intervalId);
+  }, [fetchMenu, sessionError]);
 
   const categories = Array.from(new Set(menuItems.map((item) => item.category)));
 
@@ -257,31 +257,21 @@ function CustomerOrderContent() {
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorObj = err as any;
-      const errorMessage =
-        errorObj.response?.data?.detail ||
-        errorObj.response?.data?.message ||
-        '注文に失敗しました。もう一度お試しください。';
+      let errorMessage = '注文に失敗しました。もう一度お試しください。';
+
+      if (errorObj.response?.data?.detail) {
+        if (typeof errorObj.response.data.detail === 'string') {
+          errorMessage = errorObj.response.data.detail;
+        } else {
+          // ★ オブジェクトや配列の場合は文字列化して表示
+          errorMessage = JSON.stringify(errorObj.response.data.detail);
+        }
+      } else if (errorObj.response?.data?.message) {
+        errorMessage = errorObj.response.data.message;
+      }
       alert(errorMessage);
     }
   };
-
-  // パラメータ受け取り関数
-  const handleParamsFetched = useCallback((table: number, token: string) => {
-    setTableNumber(table);
-    setSessionToken(token);
-    // トークンが空の場合は即時エラー
-    if (!token) {
-      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
-      return;
-    }
-    // セッション検証
-    api.get(`/orders/session/verify?table_number=${table}&token=${token}`)
-      .catch((err) => {
-        setSessionError(
-          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
-        );
-      });
-  }, []);
 
   // ★ 会計済み／無効なトークンの場合のエラー画面
   if (sessionError) {
@@ -312,9 +302,7 @@ function CustomerOrderContent() {
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
             {/* ★ Suspense で囲んでパラメータ取得コンポーネントを配置 */}
-      <Suspense fallback={null}>
-        <TableParamsFetcher onParamsFetched={handleParamsFetched} />
-      </Suspense>
+
 
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-red-700 px-4 py-3 text-white shadow">
