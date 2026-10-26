@@ -23,7 +23,7 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # docker-compose.yml で設定した環境変数を取得
-DATABASE_URL = os.getenv("DATABASE_URL")
+NEXT_PUBLIC_API_URL = os.getenv("NEXT_PUBLIC_API_URL")
 
 # 万が一取得できない場合のガード（任意）
 if not DATABASE_URL:
@@ -97,7 +97,7 @@ def issue_token(
     db.refresh(new_session)
 
     # 5. フロントエンド注文画面（/cust）のURLを組み立て
-    frontend_url = os.getenv(DATABASE_URL, "http://localhost:3000")
+    frontend_url = os.getenv(NEXT_PUBLIC_API_URL, "http://localhost:3000")
     order_url = f"{frontend_url}/cust?table={assigned_table.table_number}&token={new_token}"
 
     return {
