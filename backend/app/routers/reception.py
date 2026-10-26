@@ -1,4 +1,5 @@
 import os
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 import secrets
@@ -97,7 +98,7 @@ def issue_token(
     db.refresh(new_session)
 
     # 5. フロントエンド注文画面（/cust）のURLを組み立て
-    frontend_url = os.getenv(DATABASE_URL, "http://localhost:3000")
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     order_url = f"{frontend_url}/cust?table={assigned_table.table_number}&token={new_token}"
 
     return {
