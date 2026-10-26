@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime, date
 from decimal import Decimal
@@ -328,5 +328,23 @@ class KDSOrderSchema(BaseModel):
     status: str
     created_at: datetime
     items: List[KDSOrderItemSchema] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+# ==========================================
+# 受付・セッション（Reception）用スキーマ
+# ==========================================
+
+# POST /api/v1/reception/issue-token のリクエスト本体
+class IssueTokenRequestSchema(BaseModel):
+    guest_count: Optional[int] = Field(None, ge=1, description="ご来店人数 (1名以上)")
+    party_size: Optional[int] = Field(None, ge=1, description="互換用人数フィールド")
+
+# POST /api/v1/reception/issue-token のレスポンス
+class IssueTokenResponseSchema(BaseModel):
+    table_number: int
+    session_token: str
+    order_url: str
+    message: str
 
     model_config = ConfigDict(from_attributes=True)

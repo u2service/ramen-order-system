@@ -8,7 +8,8 @@ from app.database import engine, Base
 from app.routers import (
     menu, orders, kds, pos, 
     admin, options, inventory, 
-    dashboard, upload, auth
+    dashboard, upload, auth,
+    reception
 )
 
 from dotenv import load_dotenv
@@ -61,7 +62,8 @@ app.include_router(admin.router, prefix="/api/v1")
 app.include_router(options.router, prefix="/api/v1")
 app.include_router(inventory.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
-app.include_router(upload.router, prefix="/api/v1")  # ★ 画像アップロードAPIを追加
+app.include_router(upload.router, prefix="/api/v1")
+app.include_router(reception.router, prefix="/api/v1")
 
 @app.api_route("/", methods=["GET", "HEAD"])
 def read_root():

@@ -183,8 +183,25 @@ class TableSession(Base):
     __tablename__ = "table_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    table_number = Column(Integer, nullable=False, index=True)
+    # ★ table_number にテーブルマスタへの外部キーを設定
+    table_number = Column(Integer, ForeignKey("table_masters.table_number"), nullable=False, index=True)
     session_token = Column(String(64), unique=True, nullable=False, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=get_jst_now)
     closed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # ★ TableMaster へのリレーションを追加
+    table_master = relationship("TableMaster", back_populates="table_sessions")
+
+
+class TableMaster(Base):
+    __tablename__ = "table_masters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    table_number = Column(Integer, unique=True, nullable=False, index=True) # 卓番号
+    table_type = Column(String(20), nullable=False) # 'counter', 'table', 'large_table'
+    capacity = Column(Integer, nullable=False) # 収容人数
+    is_active = Column(Boolean, nullable=False, default=True) # 稼働可能フラグ（故障等での除外用）
+    last_used_at = Column(DateTime(timezone=True), nullable=True) # ★ローテーション用: 最終案内日時
+
+    table_sessions = relationship("TableSession", back_populates="table_master")
