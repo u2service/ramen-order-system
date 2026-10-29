@@ -5,6 +5,9 @@ from app.auth import require_roles
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 # .env の読み込み（ローカル用：override=False でシステム環境変数を優先）
 env_path = Path(__file__).resolve().parent.parent.parent / ".env"
@@ -28,7 +31,7 @@ if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print(f"【ERROR】Supabaseクライアント作成失敗: {e}")
+        logger.error(f"Supabaseクライアント作成失敗: {e}")
 
 # 許可する拡張子とMIMEタイプ
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
