@@ -19,7 +19,7 @@ export default function InventoryItemsPage() {
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   // 自動更新のON/OFF状態（デフォルトはON）
-  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [isAutoRefresh, setIsAutoRefresh] = useState(false);
 
   // データ取得関数
   const fetchItems = useCallback(async (isSilent = false) => {
