@@ -191,11 +191,9 @@ def apply_discount(order_id: int, payload: DiscountSchema, db: Session = Depends
                 # オプション（トッピング）の合計金額を計算する
                 options = getattr(item, "order_item_options", getattr(item, "options", []))
                 option_total = sum(opt.price for opt in options)
-                print(f"オプション（トッピング）の合計金額 option_total={option_total}")
                 
                 # 「商品価格 + オプション合計」をそのまま割引額に設定
                 item.discount_amount = item.price + option_total
-                print(f"割引額 item.discount_amount={item.discount_amount}")
 
     elif payload.order_item_id:
         # 特定商品のみ（トッピング込みで）100%引き
