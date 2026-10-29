@@ -3,8 +3,6 @@ import zoneinfo
 from sqlalchemy import Column, Integer, String, Boolean, Numeric, Date, DateTime, ForeignKey, func, Index, text
 from sqlalchemy.orm import relationship
 from app.database import Base
-import secrets
-from datetime import datetime
 
 # 日本時間(JST)を取得する共通関数
 def get_jst_now():
