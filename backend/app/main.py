@@ -13,19 +13,10 @@ from app.routers import (
 )
 
 from dotenv import load_dotenv
-from supabase import create_client, Client
 
 # app/main.py から見たルート（backend/）直下の .env を明示的に指定
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-
-# Supabase SDKクライアントの初期化（※Storageや認証を直接操作する場合用）
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI(title="ラーメン店注文・在庫管理API")
 
@@ -68,16 +59,3 @@ app.include_router(reception.router, prefix="/api/v1")
 @app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {"status": "ok", "message": "Ramen Backend Service is Running"}
-
-# --- テスト用エンドポイント（必要に応じて利用） ---
-# @app.get("/users")
-# def get_users():
-#     if not supabase:
-
-#         raise HTTPException(status_code=500, detail="Supabase client is not initialized.")
-#     try:
-
-#         response = supabase.table("categories").select("*").execute()
-#         return response.data
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
