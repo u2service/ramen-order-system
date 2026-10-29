@@ -4,6 +4,12 @@ from typing import Dict, Any, List, Optional
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from dotenv import load_dotenv
+from pathlib import Path
+
+# main.py と同じくプロジェクトルートの .env を明示的に指定
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 JWT_SECRET = os.getenv("JWT_SECRET_KEY", "ramen-order-secret-key-3891")
 JWT_ALGORITHM = "HS256"
