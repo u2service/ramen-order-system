@@ -7,7 +7,6 @@ type Product = {
   name: string; 
   price: number; 
   category_id: number;
-  category?: string; // "main", "side", "set" などのカテゴリを想定
 };
 type Option = { id: number; name: string; price: number };
 type InventoryItem = { id: number; name: string; unit: string };
@@ -50,8 +49,8 @@ export default function RecipeSettingPage() {
           const prods = await prodRes.json() as Product[];
           setProducts(prods);
 
-          // 初期選択（メイン商品があればその先頭）
-          const mainProds = prods.filter((p) => !p.category || p.category === "main");
+          // 初期選択（メイン商品 category_id === 1 の先頭など）
+          const mainProds = prods.filter((p) => p.category_id === 1);
           if (mainProds.length > 0) {
             setSelectedTargetId(mainProds[0].id);
           } else if (prods.length > 0) {
@@ -86,9 +85,27 @@ export default function RecipeSettingPage() {
   // 対象（商品系 or オプション）が商品かどうかの判定
   const isProductType = targetType === "product" || targetType === "side" || targetType === "set";
 
+  // 現在のタブに応じたターゲット一覧のフィルタリング（判定を category_id に統一）
+  const getTargetList = () => {
+    if (targetType === "product") {
+      return products.filter((p) => p.category_id === 1); // ※1：メインの category_id
+    } else if (targetType === "side") {
+      return products.filter((p) => p.category_id === 2); // ※2：サイドメニューの category_id
+    } else if (targetType === "set") {
+      return products.filter((p) => p.category_id === 3); // ※3：セットメニューの category_id
+    } else {
+      return options; // トッピング・オプション
+    }
+  };
+
+  const currentTargets = getTargetList();
+
   // 対象変更時にレシピを取得
   useEffect(() => {
-    if (!selectedTargetId) return;
+    if (!selectedTargetId) {
+      setRecipeRows([]);
+      return;
+    }
 
     let isMounted = true;
     const fetchRecipe = async () => {
@@ -111,6 +128,7 @@ export default function RecipeSettingPage() {
         }
       } catch (err: unknown) {
         console.error("レシピ取得エラー:", err);
+        if (isMounted) setRecipeRows([]);
       }
     };
 
@@ -119,21 +137,6 @@ export default function RecipeSettingPage() {
       isMounted = false;
     };
   }, [targetType, selectedTargetId, isProductType]);
-
-  // 現在のタブに応じたターゲット一覧のフィルタリング
-  const getTargetList = () => {
-    if (targetType === "product") {
-      return products.filter((p) => p.category_id === 1); // ※1：メインの category_id
-    } else if (targetType === "side") {
-      return products.filter((p) => p.category_id === 2); // ※2：サイドメニューの category_id
-    } else if (targetType === "set") {
-      return products.filter((p) => p.category_id === 3); // ※3：セットメニューの category_id
-    } else {
-      return options; // トッピング・オプション
-    }
-  };
-
-  const currentTargets = getTargetList();
 
   // 行の追加
   const handleAddRow = () => {
@@ -202,9 +205,9 @@ export default function RecipeSettingPage() {
           <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
             {[
               { type: "product" as TargetType, label: "🍜 商品（メイン）" },
-              { type: "option" as TargetType, label: "🥚 トッピング・オプション" },
               { type: "side" as TargetType, label: "🍟 サイドメニュー" },
               { type: "set" as TargetType, label: "🍱 セットメニュー" },
+              { type: "option" as TargetType, label: "🥚 トッピング・オプション" },
             ].map((tab) => {
               const active = targetType === tab.type;
               return (
@@ -212,11 +215,13 @@ export default function RecipeSettingPage() {
                   key={tab.type}
                   onClick={() => {
                     setTargetType(tab.type);
-                    // タブ切り替え時に該当リストの先頭をデフォルト選択
+                    setRecipeRows([]); // ★ タブ切り替え時に前回の材料リストを一旦クリア
+
+                    // タブ切り替え時に該当リストの先頭を自動選択する処理（getTargetListと同じ条件に統一）
                     let nextList: { id: number }[] = [];
-                    if (tab.type === "product") nextList = products.filter((p) => !p.category || p.category === "main");
-                    else if (tab.type === "side") nextList = products.filter((p) => p.category === "side");
-                    else if (tab.type === "set") nextList = products.filter((p) => p.category === "set");
+                    if (tab.type === "product") nextList = products.filter((p) => p.category_id === 1);
+                    else if (tab.type === "side") nextList = products.filter((p) => p.category_id === 2);
+                    else if (tab.type === "set") nextList = products.filter((p) => p.category_id === 3);
                     else nextList = options;
 
                     if (nextList.length > 0) {
