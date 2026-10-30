@@ -184,8 +184,32 @@ def get_analytics_summary(db: Session = Depends(get_db)):
 
 # 商品一覧取得（カテゴリ情報も合わせて取得したい場合に便利）
 @router.get("/products", response_model=List[ProductResponseSchema])
-def get_products(db: Session = Depends(get_db)):
-    return db.query(Product).order_by(Product.sort_order.asc(), Product.id.asc()).all()
+def get_products(
+    category_id: Optional[int] = Query(None, description="指定したカテゴリIDで絞り込み"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Product)
+    if category_id is not None:
+        query = query.filter(Product.category_id == category_id)
+    
+    products = query.order_by(Product.sort_order.asc(), Product.id.asc()).all()
+    
+    # category_name をレスポンスに含める場合の補助処理（必要に応じて）
+    result = []
+    for p in products:
+        p_dict = {
+            "id": p.id,
+            "category_id": p.category_id,
+            "category_name": p.category.name if p.category else None,
+            "name": p.name,
+            "price": p.price,
+            "image_url": p.image_url,
+            "sort_order": p.sort_order,
+            "is_sold_out": p.is_sold_out,
+            "is_active": p.is_active,
+        }
+        result.append(p_dict)
+    return result
 
 # 商品新規登録
 @router.post("/products", response_model=ProductResponseSchema, status_code=status.HTTP_201_CREATED)

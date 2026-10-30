@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-type Product = { id: number; name: string; price: number };
+type Product = { 
+  id: number; 
+  name: string; 
+  price: number; 
+  category_id: number;
+  category?: string; // "main", "side", "set" などのカテゴリを想定
+};
 type Option = { id: number; name: string; price: number };
 type InventoryItem = { id: number; name: string; unit: string };
 
@@ -11,10 +17,12 @@ type RecipeRow = {
   consumed_quantity: number;
 };
 
+type TargetType = "product" | "side" | "set" | "option";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export default function RecipeSettingPage() {
-  const [targetType, setTargetType] = useState<"product" | "option">("product");
+  const [targetType, setTargetType] = useState<TargetType>("product");
   const [products, setProducts] = useState<Product[]>([]);
   const [options, setOptions] = useState<Option[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
@@ -40,17 +48,19 @@ export default function RecipeSettingPage() {
 
         if (prodRes && prodRes.ok) {
           const prods = await prodRes.json() as Product[];
-
           setProducts(prods);
 
-          if (prods.length > 0) {
+          // 初期選択（メイン商品があればその先頭）
+          const mainProds = prods.filter((p) => !p.category || p.category === "main");
+          if (mainProds.length > 0) {
+            setSelectedTargetId(mainProds[0].id);
+          } else if (prods.length > 0) {
             setSelectedTargetId(prods[0].id);
           }
         }
 
         if (optRes && optRes.ok) {
           const groups = await optRes.json() as { options?: Option[] }[];
-          // 各グループの中に入っている選択肢（options）をフラットな1つの配列に展開
           const allOptions: Option[] = groups.flatMap((group) => group.options || []);
           setOptions(allOptions);
         }
@@ -73,14 +83,17 @@ export default function RecipeSettingPage() {
     };
   }, []);
 
-  // 対象（商品 or オプション）変更時にレシピを取得
+  // 対象（商品系 or オプション）が商品かどうかの判定
+  const isProductType = targetType === "product" || targetType === "side" || targetType === "set";
+
+  // 対象変更時にレシピを取得
   useEffect(() => {
     if (!selectedTargetId) return;
 
     let isMounted = true;
     const fetchRecipe = async () => {
       try {
-        const endpoint = targetType === "product"
+        const endpoint = isProductType
           ? `${API_BASE_URL}/inventory/recipes/products/${selectedTargetId}`
           : `${API_BASE_URL}/inventory/recipes/options/${selectedTargetId}`;
 
@@ -93,6 +106,8 @@ export default function RecipeSettingPage() {
               consumed_quantity: r.consumed_quantity,
             }))
           );
+        } else if (isMounted) {
+          setRecipeRows([]);
         }
       } catch (err: unknown) {
         console.error("レシピ取得エラー:", err);
@@ -103,7 +118,22 @@ export default function RecipeSettingPage() {
     return () => {
       isMounted = false;
     };
-  }, [targetType, selectedTargetId]);
+  }, [targetType, selectedTargetId, isProductType]);
+
+  // 現在のタブに応じたターゲット一覧のフィルタリング
+  const getTargetList = () => {
+    if (targetType === "product") {
+      return products.filter((p) => p.category_id === 1); // ※1：メインの category_id
+    } else if (targetType === "side") {
+      return products.filter((p) => p.category_id === 2); // ※2：サイドメニューの category_id
+    } else if (targetType === "set") {
+      return products.filter((p) => p.category_id === 3); // ※3：セットメニューの category_id
+    } else {
+      return options; // トッピング・オプション
+    }
+  };
+
+  const currentTargets = getTargetList();
 
   // 行の追加
   const handleAddRow = () => {
@@ -131,11 +161,11 @@ export default function RecipeSettingPage() {
     if (!selectedTargetId) return;
     try {
       setSaving(true);
-      const endpoint = targetType === "product"
+      const endpoint = isProductType
         ? `${API_BASE_URL}/inventory/recipes/products/sync`
         : `${API_BASE_URL}/inventory/recipes/options/sync`;
 
-      const payload = targetType === "product"
+      const payload = isProductType
         ? { product_id: selectedTargetId, recipes: recipeRows }
         : { option_id: selectedTargetId, recipes: recipeRows };
 
@@ -169,56 +199,67 @@ export default function RecipeSettingPage() {
       ) : (
         <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
           {/* 種別切替タブ */}
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
-            <button
-              onClick={() => {
-                setTargetType("product");
-                if (products.length > 0) setSelectedTargetId(products[0].id);
-              }}
-              style={{
-                padding: "0.5rem 1.25rem",
-                borderRadius: "6px",
-                border: "none",
-                fontWeight: "bold",
-                cursor: "pointer",
-                background: targetType === "product" ? "#2563eb" : "#f1f5f9",
-                color: targetType === "product" ? "#fff" : "#475569",
-              }}
-            >
-              🍜 商品（メイン）
-            </button>
-            <button
-              onClick={() => {
-                setTargetType("option");
-                if (options.length > 0) setSelectedTargetId(options[0].id);
-              }}
-              style={{
-                padding: "0.5rem 1.25rem",
-                borderRadius: "6px",
-                border: "none",
-                fontWeight: "bold",
-                cursor: "pointer",
-                background: targetType === "option" ? "#2563eb" : "#f1f5f9",
-                color: targetType === "option" ? "#fff" : "#475569",
-              }}
-            >
-              🥚 トッピング・オプション
-            </button>
+          <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+            {[
+              { type: "product" as TargetType, label: "🍜 商品（メイン）" },
+              { type: "option" as TargetType, label: "🥚 トッピング・オプション" },
+              { type: "side" as TargetType, label: "🍟 サイドメニュー" },
+              { type: "set" as TargetType, label: "🍱 セットメニュー" },
+            ].map((tab) => {
+              const active = targetType === tab.type;
+              return (
+                <button
+                  key={tab.type}
+                  onClick={() => {
+                    setTargetType(tab.type);
+                    // タブ切り替え時に該当リストの先頭をデフォルト選択
+                    let nextList: { id: number }[] = [];
+                    if (tab.type === "product") nextList = products.filter((p) => !p.category || p.category === "main");
+                    else if (tab.type === "side") nextList = products.filter((p) => p.category === "side");
+                    else if (tab.type === "set") nextList = products.filter((p) => p.category === "set");
+                    else nextList = options;
+
+                    if (nextList.length > 0) {
+                      setSelectedTargetId(nextList[0].id);
+                    } else {
+                      setSelectedTargetId(0);
+                    }
+                  }}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    borderRadius: "6px",
+                    border: "none",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    background: active ? "#2563eb" : "#f1f5f9",
+                    color: active ? "#fff" : "#475569",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* 対象選択ドロップダウン */}
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "600", color: "#334155", marginBottom: "0.4rem" }}>
-              設定対象の{targetType === "product" ? "商品" : "オプション"}を選択
+              設定対象を選択
             </label>
             <select
               value={selectedTargetId}
               onChange={(e) => setSelectedTargetId(Number(e.target.value))}
               style={{ width: "100%", padding: "0.6rem", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "1rem", background: "#fff" }}
             >
-              {targetType === "product"
-                ? products.map((p) => <option key={p.id} value={p.id}>{p.name} (¥{p.price})</option>)
-                : options.map((o) => <option key={o.id} value={o.id}>{o.name} (+¥{o.price})</option>)}
+              {currentTargets.length === 0 ? (
+                <option value={0} disabled>該当する項目がありません</option>
+              ) : (
+                currentTargets.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} (¥{t.price})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

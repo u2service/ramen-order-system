@@ -96,7 +96,7 @@ class ProductUpdateSchema(BaseModel):
 # ★ 管理画面：商品レスポンス用（GET/POST/PUT用）
 class ProductResponseSchema(ProductCreateSchema):
     id: int
-
+    category_name: Optional[str] = None  # カテゴリ名表示用
     model_config = ConfigDict(from_attributes=True)
 
 

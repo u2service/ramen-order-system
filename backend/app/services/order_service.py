@@ -207,7 +207,7 @@ class OrderService:
         set_options: List[Option],
         quantity: int
     ) -> int:
-        """セットオプションを独立したOrderItem明細行として生成し、セット加算額を返す"""
+        """セットオプションを独立したOrderItem明細行として生成し、在庫引当・原価計算を行ってセット加算額を返す"""
         set_total = 0
         for set_opt in set_options:
             set_product = db.query(Product).filter_by(id=set_opt.linked_product_id).first()
@@ -216,11 +216,20 @@ class OrderService:
                     f"セット対象商品(ID: {set_opt.linked_product_id})は現在注文できません。"
                 )
 
+            # ★ セット商品に対してもFIFOで在庫引当と原価計算を行う
+            # （※セット商品自体にトッピングが紐づかない場合は normal_options=[] を渡す）
+            set_cost_price = OrderService._allocate_inventory_fifo(
+                db=db,
+                product=set_product,
+                normal_options=[],
+                quantity=quantity
+            )
+
             set_order_item = OrderItem(
                 order_id=order_id,
                 product_id=set_product.id,
                 price=set_opt.price,
-                cost_price=0,
+                cost_price=set_cost_price,  # ★ 算出した原価を設定
                 quantity=quantity,
                 status="pending"
             )
