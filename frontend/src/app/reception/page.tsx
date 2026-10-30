@@ -54,6 +54,10 @@ export default function ReceptionPage() {
     setLoading(true);
     setErrorMsg(null);
 
+    // 💡 Renderの起動遅延（最大1分程度）を考慮して、タイムアウトを90秒に設定
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
       const res = await fetch(`${apiBaseUrl}/api/v1/reception/issue-token`, {
@@ -62,7 +66,10 @@ export default function ReceptionPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ guest_count: partySize }),
+        signal: controller.signal, // タイムアウト制御を紐付け
       });
+
+      clearTimeout(timeoutId); // 応答が返ったらタイマーをクリア
 
       if (!res.ok) {
         if (res.status === 409 || res.status === 404) {
@@ -74,8 +81,13 @@ export default function ReceptionPage() {
       const data: IssueTokenResponse = await res.json();
       setIssuedData(data);
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
       if (err instanceof Error) {
-        setErrorMsg(err.message);
+        if (err.name === 'AbortError') {
+          setErrorMsg('サーバーの起動に時間がかかっています。もう一度「決定（発券する）」ボタンを押してください。');
+        } else {
+          setErrorMsg(err.message);
+        }
       } else {
         setErrorMsg('予期せぬエラーが発生しました。');
       }
@@ -229,7 +241,9 @@ export default function ReceptionPage() {
                   {loading ? (
                     <>
                       <RefreshCw className="w-5 h-5 animate-spin" />
-                      発券中...
+                      <span className="text-sm">
+                        サーバー起動中（初回1分ほどかかります）...
+                      </span>
                     </>
                   ) : (
                     '決定（発券する）'
