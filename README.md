@@ -244,18 +244,19 @@ git clone https://github.com/<your-username>/ramen-order-system.git
 cd ramen-order-system
 ```
 ### 2. 環境変数ファイルの設定
-
-cp backend/.env.example backend/.env
-### 必要に応じて Stripe APIキー 等を設定
+```
+  cp backend/.env.example backend/.env
+```
+  ※ 必要に応じて Stripe APIキー 等を設定
 
 ### 3. Docker コンテナのビルド・起動
-
-docker-compose up --build -d
-
+```
+  docker-compose up --build -d
+```
 ### 4. 卓マスタの初期データ投入（初回のみ）
-
-docker-compose exec web python -m app.seed_tables
-
+```
+  docker-compose exec web python -m app.seed_tables
+```
 ### 5. 各サービスへのアクセス
 
 完了後、ブラウザから各エンドポイントにアクセス可能です。
@@ -271,14 +272,14 @@ docker-compose exec web python -m app.seed_tables
 ## 🧪 テスト・CI/CD
 
 ### バックエンドテスト (Pytest)
-
+```
 docker-compose exec web pytest
-
+```
 ### E2Eテスト (Playwright)
-
+```
 cd frontend
 npx playwright test
-
+```
 ### CI (GitHub Actions)
 
 GitHub リポジトリへの Pull Request 作成時に以下が自動実行されます：
