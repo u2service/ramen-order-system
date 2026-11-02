@@ -267,7 +267,7 @@ cd ramen-order-system
 * POSレジ・会計: http://localhost:3000/pos
 * 管理ダッシュボード: http://localhost:3000/admin
 * FastAPI Swagger ドキュメント: http://localhost:8000/docs
-* pgAdmin 4: http://localhost:5050
+* pgAdmin 4: http://localhost:5050  
 ────
 ## 🧪 テスト・CI/CD
 
