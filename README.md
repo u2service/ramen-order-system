@@ -29,40 +29,55 @@
 
 本システムは、店舗内の5つのロール・端末がリアルタイムに連携し、ホールスタッフの工数削減とデータドリブンな店舗運営を実現します。
 
-```text
-┌─────────────────────────────────────────────────────────┐                                                      ┌────────────────────────────┐                                                              
-│                                                         │                                                      │                            │                                                              
-│                    Customer([来店客])                   │               売上・粗利KPI─/─レシピBOM─/─ロット管理─┤     管理画面 (/admin)      │                                                              
-│                                                         │                           │                          │                            │                                                              
-└────────────────────────────┬────────────────────────────┘                           │                          └────────────────────────────┘                                                              
-                       人数入力                                                       │                                                                                                                      
-                             ▼                                                        │                                                                                                                      
-┌─────────────────────────────────────────────────────────┐                           │                                                                                                                      
-│                                                         │                           │                                                                                                                      
-│               店頭受付発券機 (/reception)               ├──────────────────ワンタイムQRコード発券─────────────────────────────┐                                                                            
-│                                                         │                           │                                         │                                                                            
-└────────────────────────────┬────────────────────────────┘                           │                                         │                                                                            
-  最適卓の自動判定 & ローテーション配席                                               │                                         │                                                                            
-                             ▼────────────────────────────────────────────────────────┘                                         ▼                                                                            
-┌─────────────────────────────────────────────────────────┐                                                      ┌────────────────────────────┐                                                              
-│                                                         │                                                      │                            │                                                              
-│                       (PostgreSQL)                      │◄───────────────────────注文送信─&─排他在庫引当───────┤ 客席セルフオーダー (/cust) │                                                              
-│                                                         │                           │                          │                            │                                                              
-└─────────────────────────────────────────────────────────┘                           │                          └──────────────┬─────────────┘                                                              
-            FIFOロット減算・原価記録                          セッションクローズ・追加注文遮断                              退店時                                                                           
-                             ▼────────────────────────────────────────────────────────┤                                         ▼                                                                            
-┌────────────────────────────┴────────────────────────────┐                           │                          ┌────────────────────────────┐                                                              
-│                                                         │                           │                          │                            │                                                              
-│                   FastAPI バックエンド                  ├◄──────────現金─/─Stripeクレカ決済────────────────────┤    POSレジ・会計 (/pos)    │                                                              
-│                                                         │                           │                          │                            │                                                              
-└────────────────────────────┬────────────────────────────┘                           │                          └────────────────────────────┘                                                              
-           SSE (Server-Sent Events) 即時通知                               調理中 ➔ 提供済                                                                                                                   
-                             ▼                                                        │                                                                                                                      
-┌─────────────────────────────────────────────────────────┐                           │                                                                                                                      
-│                                                         │                           │                                                                                                                      
-│                 厨房ディスプレイ (/kds)                 ├───────────────────────────┘                                                                                                                      
-│                                                         │                                                                                                                                                  
-└─────────────────────────────────────────────────────────┘                                                                                                                                                  
+```mermaid
+flowchart TD
+    %% サブグラフ: 店頭・客席
+    subgraph CustomerArea["【店頭・客席】"]
+        Guest(["👤 来店客"])
+        Reception["🖥 店頭受付・発券機<br/>(/reception)"]
+        CustTablet["📱 客席セルフオーダー<br/>(/cust)"]
+    end
+
+    %% サブグラフ: バックエンド & DB
+    subgraph CoreSystem["【バックエンド & DB】"]
+        API["⚙️ FastAPI バックエンド"]
+        DB[("🗄️ PostgreSQL 15")]
+        SSE["📡 SSE ブロードキャスター"]
+    end
+
+    %% サブグラフ: 店舗オペレーション
+    subgraph OpsArea["【店舗オペレーション】"]
+        KDS["🍳 厨房ディスプレイ KDS<br/>(/kds)"]
+        POS["💵 POSレジ端末<br/>(/pos)"]
+        Admin["📊 管理ダッシュボード<br/>(/admin)"]
+    end
+
+    %% 1. 受付〜配席
+    Guest -->|"1. 人数入力"| Reception
+    Reception -->|"2. 卓空き検索 & 配席判定<br/>(ローテーション案内)"| API
+    API <-->|"卓状態取得 / 更新"| DB
+    API -->|"3. ワンタイムトークン付き<br/>QRコード発行"| Reception
+    Reception -->|"4. 案内券発券"| Guest
+
+    %% 2. 注文〜調理
+    Guest -->|"5. QR読取・注文送信"| CustTablet
+    CustTablet -->|"6. 注文API (トークン検証)"| API
+    API -->|"7. 排他制御(FOR UPDATE)<br/>FIFO在庫引当・原価記録"| DB
+    API -->|"8. イベント通知"| SSE
+    SSE -->|"9. リアルタイム配信"| KDS
+
+    %% 3. 調理〜提供
+    KDS -->|"10. 調理中 / 提供済 更新"| API
+
+    %% 4. 会計〜セッション終了
+    Guest -.->|"11. 退店・レジへ"| POS
+    POS -->|"12. 会計実行 (現金 / Stripe)"| API
+    API -->|"13. 卓セッション終了<br/>(追加注文ブロック)"| DB
+    API -.->|"14. 画面を会計済みに更新"| CustTablet
+
+    %% 5. KPI・分析
+    Admin <-->|"15. 売上・粗利KPI閲覧<br/>FIFO在庫 / レシピ(BOM)管理"| API
+
 ```
 
 ---
@@ -71,16 +86,11 @@
 
 | 画面 / ロール | URL | 主な機能 |
 | --- | --- | --- |
-| **店頭受付・発券機**<br>(Reception) | `/reception` |
-・来店人数に応じた**最適テーブル種別の自動判定**（カウンター/テーブル/大型席）<br>・偏りを防ぐ**稼働ローテーション配席**（最終利用日時順）<br>・注文用ワンタイムQRコードの発行、満席時の案内制御 |
-| **客席セルフオーダー**<br>(Customer) | `/cust` |
-・QRコードから引き継いだトークン認証・セッション検証<br>・カテゴリ別メニュー閲覧、麺の硬さ・味の濃さ・トッピングのカスタマイズ<br>・リアルタイム売り切れ表示、**会計完了後の追加注文自動ブロック** |
-| **厨房ディスプレイ**<br>(KDS: Kitchen) | `/kds` | ・**SSE（Server-Sent Events）**による注文の即時受信・音/視覚通知<br>・調理ステータス管理（未調理 ➔ 調理中 ➔ 提供済 ➔
-キャンセル）<br>・注文経過時間タイマー表示による提供遅延防止 |
+| **店頭受付・発券機**<br>(Reception) | `/reception` |・来店人数に応じた**最適テーブル種別の自動判定**（カウンター/テーブル/大型席）<br>・偏りを防ぐ**稼働ローテーション配席**（最終利用日時順）<br>・注文用ワンタイムQRコードの発行、満席時の案内制御 |
+| **客席セルフオーダー**<br>(Customer) | `/cust` |・QRコードから引き継いだトークン認証・セッション検証<br>・カテゴリ別メニュー閲覧、麺の硬さ・味の濃さ・トッピングのカスタマイズ<br>・リアルタイム売り切れ表示、**会計完了後の追加注文自動ブロック** |
+| **厨房ディスプレイ**<br>(KDS: Kitchen) | `/kds` | ・**SSE（Server-Sent Events）**による注文の即時受信・音/視覚通知<br>・調理ステータス管理（未調理 ➔ 調理中 ➔ 提供済 ➔ キャンセル）<br>・注文経過時間タイマー表示による提供遅延防止 |
 | **POSレジ・会計**<br>(Cashier) | `/pos` | ・卓ごとの未会計伝票管理・合算会計<br>・現金決済（お釣り計算）＆ **Stripe Elements 連携によるクレジットカード決済**<br>・値引き・割引対応、注文の個別取消 |
-| **管理ダッシュボード**<br>(Admin) | `/admin` |
-・日別/月別の売上・原価・粗利・客単価KPIダッシュボード<br>・商品/カテゴリ/オプショングループのマスタ管理<br>・**FIFOロット別在庫管理**・賞味期限切れ廃棄ロス登録<br>・多階層**レシピ（BOM）管理**（ラーメ
-ン・サイド・セット・オプション連動） |
+| **管理ダッシュボード**<br>(Admin) | `/admin` |・日別/月別の売上・原価・粗利・客単価KPIダッシュボード<br>・商品/カテゴリ/オプショングループのマスタ管理<br>・**FIFOロット別在庫管理**・賞味期限切れ廃棄ロス登録<br>・多階層**レシピ（BOM）管理**（ラーメン・サイド・セット・オプション連動） |
 
 ---
 
@@ -162,64 +172,65 @@
 
 ## 🗄 ER図・データモデル設計
 
+📊 Diagram (unsupported type)                                                                                                                                                                              
+──────────────────────────────                                                                                                                                                                             
+```mermaid
 
-  📊 Diagram (unsupported type)                                                                                                                                                                              
-  ──────────────────────────────                                                                                                                                                                             
-  erDiagram
-      TableMaster ||--o{ TableSession : has                                                                                                                                                                  
-      Category ||--o{ Product : contains                                                                                                                                                                     
-      Product ||--o{ ProductOptionGroup : has                                                                                                                                                                
-      OptionGroup ||--o{ ProductOptionGroup : belongs                                                                                                                                                        
-      OptionGroup ||--o{ Option : contains                                                                                                                                                                   
+erDiagram
+    TableMaster ||--o{ TableSession : has                                                                                                                                                                  
+    Category ||--o{ Product : contains                                                                                                                                                                     
+    Product ||--o{ ProductOptionGroup : has                                                                                                                                                                
+    OptionGroup ||--o{ ProductOptionGroup : belongs                                                                                                                                                        
+    OptionGroup ||--o{ Option : contains                                                                                                                                                                   
 
-      Product ||--o{ ProductInventoryItem : recipe                                                                                                                                                           
-      Option ||--o{ OptionInventoryItem : recipe                                                                                                                                                             
-      InventoryItem ||--o{ ProductInventoryItem : consumed_by                                                                                                                                                
-      InventoryItem ||--o{ OptionInventoryItem : consumed_by                                                                                                                                                 
-      InventoryItem ||--o{ InventoryLot : lots                                                                                                                                                               
+    Product ||--o{ ProductInventoryItem : recipe                                                                                                                                                           
+    Option ||--o{ OptionInventoryItem : recipe                                                                                                                                                             
+    InventoryItem ||--o{ ProductInventoryItem : consumed_by                                                                                                                                                
+    InventoryItem ||--o{ OptionInventoryItem : consumed_by                                                                                                                                                 
+    InventoryItem ||--o{ InventoryLot : lots                                                                                                                                                               
 
-      Order ||--o{ OrderItem : details                                                                                                                                                                       
-      Product ||--o{ OrderItem : ordered_as                                                                                                                                                                  
-      OrderItem ||--o{ OrderItemOption : has_options                                                                                                                                                         
-      Option ||--o{ OrderItemOption : chosen                                                                                                                                                                 
+    Order ||--o{ OrderItem : details                                                                                                                                                                       
+    Product ||--o{ OrderItem : ordered_as                                                                                                                                                                  
+    OrderItem ||--o{ OrderItemOption : has_options                                                                                                                                                         
+    Option ||--o{ OrderItemOption : chosen                                                                                                                                                                 
 
-      TableMaster {
-          int id PK
-          int table_number UK                                                                                                                                                                                
-          string table_type "counter / table / large_table"                                                                                                                                                  
-          int capacity
-          boolean is_active
-          datetime last_used_at "ローテーション配席用"                                                                                                                                                       
-      }
+    TableMaster {
+        int id PK
+        int table_number UK                                                                                                                                                                                
+        string table_type "counter / table / large_table"                                                                                                                                                  
+        int capacity
+        boolean is_active
+        datetime last_used_at "ローテーション配席用"                                                                                                                                                       
+    }
 
-      TableSession {
-          int id PK
-          int table_number FK                                                                                                                                                                                
-          string session_token UK                                                                                                                                                                            
-          boolean is_active "会計完了時にfalseへ"                                                                                                                                                            
-          datetime created_at                                                                                                                                                                                
-          datetime closed_at
-      }
+    TableSession {
+        int id PK
+        int table_number FK                                                                                                                                                                                
+        string session_token UK                                                                                                                                                                            
+        boolean is_active "会計完了時にfalseへ"                                                                                                                                                            
+        datetime created_at                                                                                                                                                                                
+        datetime closed_at
+    }
 
-      Order {
-          int id PK
-          int table_number
-          string status "pending / served / paid"                                                                                                                                                            
-          int total_price
-          string payment_method                                                                                                                                                                              
-          datetime created_at                                                                                                                                                                                
-          datetime paid_at
-      }
+    Order {
+        int id PK
+        int table_number
+        string status "pending / served / paid"                                                                                                                                                            
+        int total_price
+        string payment_method                                                                                                                                                                              
+        datetime created_at                                                                                                                                                                                
+        datetime paid_at
+    }
 
-      InventoryLot {
-          int id PK
-          int inventory_item_id FK                                                                                                                                                                           
-          date expiration_date                                                                                                                                                                               
-          decimal current_quantity                                                                                                                                                                           
-          decimal unit_cost
-          string status "active / expired / empty"                                                                                                                                                           
-      }
-
+    InventoryLot {
+        int id PK
+        int inventory_item_id FK                                                                                                                                                                           
+        date expiration_date                                                                                                                                                                               
+        decimal current_quantity                                                                                                                                                                           
+        decimal unit_cost
+        string status "active / expired / empty"                                                                                                                                                           
+    }
+```
 
 ---
 
@@ -231,46 +242,46 @@ Docker Compose を利用することで、ワンコマンドで全コンテナ�
 ```bash
 git clone https://github.com/<your-username>/ramen-order-system.git
 cd ramen-order-system
-
-# 2. 環境変数ファイルの設定
+```
+### 2. 環境変数ファイルの設定
 
 cp backend/.env.example backend/.env
-# 必要に応じて Stripe APIキー 等を設定
+### 必要に応じて Stripe APIキー 等を設定
 
-# 3. Docker コンテナのビルド・起動
+### 3. Docker コンテナのビルド・起動
 
 docker-compose up --build -d
 
-# 4. 卓マスタの初期データ投入（初回のみ）
+### 4. 卓マスタの初期データ投入（初回のみ）
 
 docker-compose exec web python -m app.seed_tables
 
-# 5. 各サービスへのアクセス
+### 5. 各サービスへのアクセス
 
 完了後、ブラウザから各エンドポイントにアクセス可能です。
 
-店頭受付・発券機: http://localhost:3000/reception
-客席セルフオーダー: http://localhost:3000/cust (発券QRコードまたは直接指定)
-厨房ディスプレイ (KDS): http://localhost:3000/kds
-POSレジ・会計: http://localhost:3000/pos
-管理ダッシュボード: http://localhost:3000/admin
-FastAPI Swagger ドキュメント: http://localhost:8000/docs
-pgAdmin 4: http://localhost:5050
+* 店頭受付・発券機: http://localhost:3000/reception
+* 客席セルフオーダー: http://localhost:3000/cust (発券QRコードまたは直接指定)
+* 厨房ディスプレイ (KDS): http://localhost:3000/kds
+* POSレジ・会計: http://localhost:3000/pos
+* 管理ダッシュボード: http://localhost:3000/admin
+* FastAPI Swagger ドキュメント: http://localhost:8000/docs
+* pgAdmin 4: http://localhost:5050
 ────
- 🧪 テスト・CI/CD
+## 🧪 テスト・CI/CD
 
-# バックエンドテスト (Pytest)
+### バックエンドテスト (Pytest)
 
 docker-compose exec web pytest
 
-# E2Eテスト (Playwright)
+### E2Eテスト (Playwright)
 
 cd frontend
 npx playwright test
 
-# CI (GitHub Actions)
+### CI (GitHub Actions)
 
-tHub リポジトリへの Pull Request 作成時に以下が自動実行されます：
+GitHub リポジトリへの Pull Request 作成時に以下が自動実行されます：
 
- Backend: Python 3.11 環境での flake8（重大構文エラーチェック）＋ pytest（インメモリSQLite）
- Frontend: Node.js 20 環境での npm run lint（ESLint）＋ TypeScript型検査（tsc --noEmit
+1. Backend: Python 3.11 環境での flake8（重大構文エラーチェック）＋ pytest（インメモリSQLite）
+2. Frontend: Node.js 20 環境での npm run lint（ESLint）＋ TypeScript型検査（tsc --noEmit
