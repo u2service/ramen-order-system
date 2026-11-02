@@ -14,6 +14,24 @@
 
 ---
 
+## 🌐 オンラインデモ環境
+
+本システムはクラウド環境にデプロイしており、以下のリンクから各画面の実際の動作をご確認いただけます。
+
+> **🔗 公開URL**: **https://ramen-order-system.vercel.app**
+> *(※ バックエンドに無料枠クラウドサーバー（Render等）を利用している場合、初回アクセス時のみ起動に50秒ほどかかる場合があります)*
+
+### 📱 各画面へのクイックアクセス
+* **[店頭受付・発券機]**: https://ramen-order-system.vercel.app/reception
+* **[厨房ディスプレイ (KDS)]**: https://ramen-order-system.vercel.app/kds
+* **[POSレジ・会計]**: https://ramen-order-system.vercel.app/pos
+* **[管理ダッシュボード]**: https://ramen-order-system.vercel.app/admin
+
+### 🔑 デモ用ログインアカウント
+ログイン画面（`/login`）では、ワンクリックで各ロール（管理者 / 厨房 / レジ）を選択してログイン可能です。
+
+---
+
 ## 📌 目次
 - [システム全体像・業務フロー](#-システム全体像業務フロー)
 - [画面一覧・提供機能](#-画面一覧提供機能)
