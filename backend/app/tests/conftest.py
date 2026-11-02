@@ -12,8 +12,10 @@ from app.database import Base, get_db
 from app.main import app
 from app.models import (
     Category, Product, OptionGroup, Option,
-    InventoryItem, InventoryLot, ProductInventoryItem, OptionInventoryItem
+    InventoryItem, InventoryLot, ProductInventoryItem, OptionInventoryItem,
+    TableSession
 )
+from app.auth import generate_user_token
 
 # テスト用のインメモリSQLite
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -25,6 +27,11 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+@pytest.fixture(scope="function")
+def admin_headers():
+    """管理者ロールの認証ヘッダー"""
+    token = generate_user_token("admin", "admin")
+    return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -130,6 +137,18 @@ def seed_master_data(db_session):
     db_session.add_all([lot_men_old, lot_men_new, lot_egg])
     db_session.commit()
 
+    # ★ 7. テスト用アクティブセッション（卓番1〜5など）を投入
+    sessions = {}
+    for tbl in [1, 2, 3, 4, 5]:
+        s = TableSession(
+            table_number=tbl,
+            session_token=f"test-token-table-{tbl}",
+            is_active=True
+        )
+        db_session.add(s)
+        sessions[tbl] = s
+    db_session.commit()
+
     return {
         "p_tonkotsu": p_tonkotsu,
         "p_gyoza": p_gyoza,
@@ -140,4 +159,5 @@ def seed_master_data(db_session):
         "lot_men_old": lot_men_old,
         "lot_men_new": lot_men_new,
         "lot_egg": lot_egg,
+        "sessions": sessions,
     }
