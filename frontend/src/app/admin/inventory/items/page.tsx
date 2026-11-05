@@ -77,7 +77,7 @@ export default function InventoryItemsPage() {
         if (data.event === "inventory_updated" || data.event === "new_order") {
           handleInventoryUpdate();
         }
-      } catch (e: unknown) {
+      } catch {
         // JSON解析エラーは無視
       }
     };

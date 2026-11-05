@@ -32,7 +32,6 @@ export default function ReceptionPage() {
   useEffect(() => {
     if (!issuedData) return;
 
-    setCountdown(AUTO_RESET_SECONDS);
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -79,6 +78,7 @@ export default function ReceptionPage() {
       }
 
       const data: IssueTokenResponse = await res.json();
+      setCountdown(AUTO_RESET_SECONDS);
       setIssuedData(data);
     } catch (err: unknown) {
       clearTimeout(timeoutId);

@@ -119,7 +119,7 @@ export default function KDSStreamPage() {
             fetchKdsOrders();
           }
         } catch (e) {
-          // パースエラー時も念のため再取得
+          console.warn("SSEパースエラー:", e);
           fetchKdsOrders();
         }
       }
