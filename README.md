@@ -303,5 +303,3 @@ GitHub リポジトリへの Pull Request 作成時に以下が自動実行さ�
 
 1. Backend: Python 3.11 環境での flake8（重大構文エラーチェック）＋ pytest（インメモリSQLite）
 2. Frontend: Node.js 20 環境での npm run lint（ESLint）＋ TypeScript型検査（tsc --noEmit
-
-### プルリクエストテスト
