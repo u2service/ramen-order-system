@@ -103,7 +103,6 @@ export default function RecipeSettingPage() {
   // 対象変更時にレシピを取得
   useEffect(() => {
     if (!selectedTargetId) {
-      setRecipeRows([]);
       return;
     }
 

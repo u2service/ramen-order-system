@@ -164,8 +164,10 @@ export default function PosCheckout() {
   }, []);
 
   // ▼ クレジットカード選択時 または 注文金額変更時に Stripe PaymentIntent を作成
+  const totalPrice = currentOrder?.total_price;
+
   useEffect(() => {
-    if (paymentMethod === 'credit' && currentOrder && currentOrder.total_price > 0) {
+    if (paymentMethod === 'credit' && totalPrice && totalPrice > 0) {
       let isMounted = true;
       const createIntent = async () => {
         setIsCreatingIntent(true);
@@ -173,7 +175,7 @@ export default function PosCheckout() {
           const res = await fetch('/api/create-payment-intent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: currentOrder.total_price }),
+            body: JSON.stringify({ amount: totalPrice }),
           });
           const data = (await res.json()) as { clientSecret?: string };
           if (isMounted && data.clientSecret) {
@@ -192,7 +194,7 @@ export default function PosCheckout() {
         isMounted = false;
       };
     }
-  }, [paymentMethod, currentOrder?.total_price]);
+  }, [paymentMethod, totalPrice]);
 
   // ▼ 裏で伝票を最新化する関数[cite: 2]
   const fetchTableOrderSilent = useCallback(async (tableNum: number) => {

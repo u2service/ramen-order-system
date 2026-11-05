@@ -2,7 +2,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
+
 import { X, ChevronRight, Check, ArrowLeft, Plus, Minus } from 'lucide-react';
+
 
 export type Option = {
   id: number;
@@ -131,36 +134,44 @@ export default function OptionSelectModal({
           {baseImage && (
             <div className="relative w-full aspect-[16/9] bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
               {/* ベースラーメン画像 */}
-              <img
+              <Image
                 src={baseImage}
                 alt={productName}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
 
               {/* ねぎ増し重ね合わせ表示 */}
               {isNegiSelected && (
-                <img
+                <Image
                   src="/images/negi.png"
                   alt="ねぎ増しトッピング"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-300"
+                  fill
+                  className="object-cover pointer-events-none transition-opacity duration-300"
+                  unoptimized
                 />
               )}
 
               {/* チャーシュー重ね合わせ表示 */}
               {isChashuSelected && (
-                <img
+                <Image
                   src="/images/chashu.png"
                   alt="チャーシュートッピング"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-300"
+                  fill
+                  className="object-cover pointer-events-none transition-opacity duration-300"
+                  unoptimized
                 />
               )}
 
               {/* 味玉重ね合わせ表示 */}
               {isAjitamaSelected && (
-                <img
+                <Image
                   src="/images/ajitama.png"
                   alt="味玉トッピング"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-300"
+                  fill
+                  className="object-cover pointer-events-none transition-opacity duration-300"
+                  unoptimized
                 />
               )}
 

@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import Image from "next/image";
+
 import { useState, useEffect, ChangeEvent, useCallback } from "react";
 import { Category, Product } from "@/types";
 import {
@@ -322,10 +324,16 @@ export default function AdminProductsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {imageUrl ? (
               <div style={{ position: "relative" }}>
-                <img
+                <Image
                   src={getImageUrl(imageUrl)}
                   alt="Preview"
-                  style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                  width={64} 
+                  height={64}
+                  style={{ 
+                    objectFit: "cover", 
+                    borderRadius: "6px", 
+                    border: "1px solid #cbd5e1" 
+                  }}
                 />
                 <button
                   type="button"
@@ -454,10 +462,12 @@ export default function AdminProductsPage() {
                 {/* ★ サムネイル画像表示セル */}
                 <td style={{ padding: "0.5rem 0.75rem" }}>
                   {prod.image_url ? (
-                    <img
+                    <Image
                       src={getImageUrl(prod.image_url)}
                       alt={prod.name}
-                      style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
+                      width={40}
+                      height={40}
+                      style={{ objectFit: "cover", borderRadius: "4px", border: "1px solid #e2e8f0" }}
                     />
                   ) : (
                     <div style={{ width: "40px", height: "40px", borderRadius: "4px", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.65rem", color: "#94a3b8" }}>

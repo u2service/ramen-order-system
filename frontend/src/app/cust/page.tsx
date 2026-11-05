@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { CartItem } from '@/types';
 import { ShoppingBag, Check, Trash2, X, ChevronUp, Edit3, ArrowLeft } from 'lucide-react';
@@ -40,15 +41,30 @@ const categoryLabelMap: Record<string, string> = {
 // 1. 注文画面の実体コンポーネント
 function CustomerOrderContent() {
   const searchParams = useSearchParams(); // ★ 直接取得
-  const [tableNumber, setTableNumber] = useState<number>(1);
-  const [sessionToken, setSessionToken] = useState<string>('');
-  const [sessionError, setSessionError] = useState<string | null>(null); 
+
+  // 1. URLパラメータを最初に取得
+  const tableParam = searchParams.get('table');
+  const tokenParam = searchParams.get('token');
+
+  // 2. パラメータの有無による初期エラーやテーブル番号を state の初期値として直接算出する
+  const [tableNumber] = useState<number>(() => (tableParam ? parseInt(tableParam, 10) : 1));
+  const [sessionToken] = useState<string>(() => tokenParam || '');
+  const [sessionError, setSessionError] = useState<string | null>(() => {
+    if (!tableParam || !tokenParam) {
+      return "無効なQRコードです。卓上のQRコードを再度読み取ってください。";
+    }
+    return null;
+  });
+
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+
+  // パラメータがない場合は最初から loading を false にする
+  const [loading, setLoading] = useState<boolean>(() => !!(tableParam && tokenParam));
   const [orderSuccess, setOrderSuccess] = useState<boolean>(false);
 
   const [isCartModalOpen, setIsCartModalOpen] = useState<boolean>(false);
@@ -107,35 +123,33 @@ function CustomerOrderContent() {
     }
   }, []);
 
-  // ★ 追加: 画面起動時にまずセッションを検証し、有効ならメニューを取得する
+  // 3. セッション検証とメニュー取得を行う useEffect
   useEffect(() => {
-    const tableParam = searchParams.get('table');
-    const tokenParam = searchParams.get('token');
+    // すでに初期段階でエラーがある場合は検証を行わない
+    if (!tableParam || !tokenParam) return;
 
-    if (!tableParam || !tokenParam) {
-      setSessionError("無効なQRコードです。卓上のQRコードを再度読み取ってください。");
-      setLoading(false);
-      return;
-    }
-
-    const parsedTable = parseInt(tableParam, 10);
-    setTableNumber(parsedTable);
-    setSessionToken(tokenParam);
+    let isMounted = true;
 
     // バックエンドでセッション有効性を検証
-    api.get(`/orders/session/verify?table_number=${parsedTable}&token=${tokenParam}`)
+    api.get(`/orders/session/verify?table_number=${tableParam}&token=${tokenParam}`)
       .then(() => {
-        // セッションが有効であればメニューを読み込む
-        fetchMenu();
+        if (isMounted) {
+          fetchMenu(); // 成功したらメニュー取得へ
+        }
       })
       .catch((err) => {
-        // 会計済みまたは無効ならエラー画面に切り替える
-        setSessionError(
-          err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
-        );
-        setLoading(false);
+        if (isMounted) {
+          setSessionError(
+            err.response?.data?.detail || "お会計が完了したか、無効なQRコードです。"
+          );
+          setLoading(false);
+        }
       });
-  }, [searchParams, fetchMenu]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tableParam, tokenParam, fetchMenu]);
 
   useEffect(() => {
     if (sessionError) return;
@@ -351,10 +365,12 @@ function CustomerOrderContent() {
                   >
                     {/* ★ 追加: カテゴリー画像表示領域 */}
                     <div className="h-40 sm:h-64 w-full bg-gray-100 relative overflow-hidden">
-                      <img
+                      <Image
                         src={imageSrc}
                         alt={catName}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
 
@@ -404,10 +420,12 @@ function CustomerOrderContent() {
                   >
                     {/* ★ 画像表示エリア（アスペクト比を固定して大きく表示） */}
                     <div className="w-full aspect-[4/3] bg-gray-100 relative overflow-hidden">
-                      <img
+                      <Image
                         src={itemImageSrc}
                         alt={item.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                       {!item.is_available && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold">
