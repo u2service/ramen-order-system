@@ -58,8 +58,8 @@ export default function ReceptionPage() {
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
     try {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-      const res = await fetch(`${apiBaseUrl}/api/v1/reception/issue-token`, {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBaseUrl}/reception/issue-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
