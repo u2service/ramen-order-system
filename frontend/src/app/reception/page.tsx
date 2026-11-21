@@ -55,7 +55,7 @@ export default function ReceptionPage() {
 
     // 💡 Renderの起動遅延（最大1分程度）を考慮して、タイムアウトを90秒に設定
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 190000);
 
     try {
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
