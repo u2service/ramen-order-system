@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 import zoneinfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import TableMaster, TableSession
+from app.models import TableMaster, TableSession, Order
 from app.schemas import IssueTokenRequestSchema, IssueTokenResponseSchema
 
 router = APIRouter(
@@ -36,8 +36,39 @@ def get_jst_now():
 @router.post("/issue-token", response_model=IssueTokenResponseSchema, status_code=status.HTTP_201_CREATED)
 def issue_token(
     request: IssueTokenRequestSchema,
-    db: Session = Depends(get_db)  # Session (同期) に変更
+    db: Session = Depends(get_db)  
 ):
+
+    now = get_jst_now()
+    timeout_threshold = now - timedelta(minutes=10)
+
+    # --- 10分以上経過した未注文セッションの無効化処理 ---
+    expired_sessions = (
+        db.query(TableSession)
+        .filter(
+            TableSession.is_active == True,
+            TableSession.created_at <= timeout_threshold
+        )
+        .all()
+    )
+
+    for session in expired_sessions:
+        # その卓に未会計（食事中・調理中）の注文が存在するか確認
+        has_active_order = (
+            db.query(Order)
+            .filter(
+                Order.table_number == session.table_number,
+                Order.status.notin_(["paid", "cancelled"])
+            )
+            .first()
+        )
+        # 注文が1件も入っていない（注文をやめた）場合のみ無効化
+        if not has_active_order:
+            session.is_active = False
+            session.closed_at = now
+
+    db.commit()
+    
     # guest_count または party_size のどちらか入っている方を取得（デフォルト1名）
     guest_count = request.guest_count or request.party_size or 1
 
