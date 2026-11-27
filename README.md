@@ -1,3 +1,4 @@
+<img width="1161" height="834" alt="ROS" src="https://github.com/user-attachments/assets/1bb16896-0d72-4600-9cd9-f87a48213b8f" />
 # 🍜 ラーメン店向けリアルタイム注文・店舗運営管理システム
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
