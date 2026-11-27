@@ -303,3 +303,7 @@ GitHub リポジトリへの Pull Request 作成時に以下が自動実行さ�
 
 1. Backend: Python 3.11 環境での flake8（重大構文エラーチェック）＋ pytest（インメモリSQLite）
 2. Frontend: Node.js 20 環境での npm run lint（ESLint）＋ TypeScript型検査（tsc --noEmit
+
+  ## 開発着手前の要件定義・設計仕様書
+
+  [ラーメン店 店内注文・在庫・店舗管理システム 要件定義・設計仕様書](https://github.com/u2service/ECsite/blob/main/docs/%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%E5%BA%97%20%E5%BA%97%E5%86%85%E6%B3%A8%E6%96%87%E3%83%BB%E5%9C%A8%E5%BA%AB%E3%83%BB%E5%BA%97%E8%88%97%E7%AE%A1%E7%90%86%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0%20%E8%A6%81%E4%BB%B6%E5%AE%9A%E7%BE%A9%E3%83%BB%E8%A8%AD%E8%A8%88%E4%BB%95%E6%A7%98%E6%9B%B8.md)
